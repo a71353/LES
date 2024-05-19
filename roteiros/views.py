@@ -64,7 +64,7 @@ def proporRoteiro(request):
         return user_check_var.get('render')
     today= datetime.now(timezone.utc) 
     try:
-        diaabertopropostas = Diaaberto.objects.get(datapropostasatividadesinicio__lte=today, datapropostaatividadesfim__gte=today)
+       diaabertopropostas=Diaaberto.objects.get(datapropostasatividadesincio__lte=today,dataporpostaatividadesfim__gte=today)
     except Diaaberto.DoesNotExist:
         return render(request, 'mensagem.html', {
             'tipo': 'error',
@@ -132,7 +132,7 @@ def inserirsessaoRoteiro(request, id):
          #                                 dataporpostaatividadesfim__gte=today)
         
 
-        print(diaaberto)
+ 
         diainicio = diaaberto.datadiaabertoinicio.date()
         diafim = diaaberto.datadiaabertofim.date()
         totaldias = diafim - diainicio + timedelta(days=1)
@@ -145,7 +145,7 @@ def inserirsessaoRoteiro(request, id):
         roteiroid = Roteiro.objects.get(id=id)
         
         sessoes = Sessao.objects.all().filter(roteiroid=id)
-        print(sessoes)
+ 
         check = len(sessoes)
     
         if request.method == "POST":
