@@ -6,7 +6,7 @@ import itertools
 from django.utils.html import format_html
 from django.urls import reverse
 from django.db.models import Max, Min, OuterRef, Subquery
-from inscricoes.models import Inscricaosessao, RegistoGrupo
+from inscricoes.models import Inscricaosessao
 
 class InscricoesTable(tables.Table):
     grupo = tables.Column('Grupo', accessor='id', attrs={"th": {"width": "65"}})
