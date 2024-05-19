@@ -74,8 +74,13 @@
             </a>   
         </div>
         
-        <!-- Renderização da tabela de questionários -->
+        {% if table.data %}
         {% render_table table %}
+        {% else %}
+            <div class="notification is-warning">
+                Não existem questionários criados no momento.
+            </div>
+        {% endif %}
     </div>
 </div>
 
