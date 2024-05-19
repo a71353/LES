@@ -1,0 +1,60 @@
+{% extends 'app.html' %}
+{% block content %}
+<div>
+    <section class="roteiro">
+        <article class="cena">
+        </div>
+        <div class="column">
+            <nav class="breadcrumb" aria-label="breadcrumbs">
+                <ul>
+                  <li><a href="#">Início</a></li>
+                  <li class="is-active"><a href="#" aria-current="page">Roteiros</a></li>
+                </ul>
+              </nav>
+            <a href="{% url 'roteiros:proporRoteiro' %}" class="button is-success is-outlined" type="button" style="margin-bottom:0.5rem">
+                <span class="icon is-small">
+                    <i class="mdi mdi-plus"></i>
+                </span>
+                <span>Adicionar Roteiro</span>
+            </a>
+            <a href="{% url 'roteiros:verTodosRelatorios' %}" class="button is-success is-outlined" type="button" style="margin-bottom:0.5rem">
+                <span class="icon is-small">
+                    <i class="mdi mdi-plus"></i>
+                </span>
+                <span>Exportar Todos os Roteiros</span>
+            </a>
+            
+   
+                <div>
+                    {% for roteiro in roteiro %}
+                    <div>
+                        <h3>{{ roteiro.nome }}</h3>
+                        <!-- Outros detalhes do roteiro -->
+                        <a id="concluir" onclick= "alert.render('Deseja duplicar o roteiro {{roteiro.nome}}?','{% url 'roteiros:escolherDiaAberto2' roteiro.id %}')" class="button is-small is-link">
+             
+                            <span>DuplicarRoteiro</span>
+                          </a>
+                        <a id="concluir" onclick= "alert.render('Deseja eliminar o roteiro {{roteiro.nome}}?','{% url 'roteiros:eliminarRoteiro' roteiro.id %}')" class="button is-small is-link">
+             
+                            <span>EliminarRoteiro</span>
+                          </a>
+                        <a id="concluir" onclick= "alert.render('Deseja alterar o roteiro {{roteiro.nome}}?','{% url 'roteiros:alterarRoteiro2' roteiro.id %}')" class="button is-small is-link">
+                        <span>Editar Roteiro</span>
+                        </a>
+                        <a id="concluir" onclick= "alert.render('Deseja Exportar o roteiro {{roteiro.nome}}?','{% url 'roteiros:verRelatorio' roteiro.id %}')" class="button is-small is-link">
+                            <span>Exportar Roteiro</span>
+                        </a>
+                    </div>
+                    {% empty %}
+                    <p>Nenhum roteiro encontrado.</p>
+                    {% endfor %}
+                </div>
+
+            {% csrf_token %} <!-- Segurança contra CSRF -->
+
+      
+
+        <!-- Adicione mais cenas conforme necessário -->
+    </section>
+</div>
+{% endblock %}

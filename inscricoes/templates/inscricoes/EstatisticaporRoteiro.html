@@ -1,0 +1,169 @@
+{% extends 'app.html' %}
+{% load static %}
+
+{% block title %}Estatísticas{% endblock %}
+
+{% block load %}
+<link rel="stylesheet" href="{% static 'css/Chart.min.css' %}">
+{% endblock %}
+
+{% block content %}
+<style>
+    .question-title h3 {
+        background-color: #e3f2fd; 
+        padding: 15px;              
+        border-radius: 8px;        
+        font-size: 1.2em;          
+        margin-bottom: 20px;        
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+        text-align: center;         
+    }
+    .chart-container {
+    padding: 10px;  
+    margin-bottom: auto;
+    max-width: 700px; 
+    height: 500px; 
+    margin-left: auto; 
+    margin-right: auto;
+    margin-top: auto;
+    }
+</style>
+
+<div class="container">
+    <div class="row mb-3">
+        <a href="{% url 'inscricoes:estatisticasAtividade' diaabertoid %}" class="button is-info is-outlined" type="button" style="margin-bottom:0.5rem">
+            <span>Anterior</span>
+        </a>
+    </div>
+    <h2>Resultados do Questionário</h2>
+    <nav aria-label="breadcrumbs" class="breadcrumb">
+        <ul>
+            <li><a href="{% url 'home' %}">Início</a></li>
+            <li class="is-active"><a href="">Dados e Estatísticas</a></li>
+        </ul>
+    </nav>
+    <div class="field is-horizontal">
+        <div class="field-body">
+            <div class="field">
+                <p class="control">
+                    <h2>Roteiro Selecionado: {{ roteiro.nome }}</h2>
+                </p>
+            </div>
+        </div>
+    </div>
+    <!-- Utilizando a estrutura de colunas e linhas do Bootstrap -->
+    <div class="row">
+        {% for resultado in resultados %}
+        <div class="question-title">
+            <h3>{{ resultado.pergunta }}</h3>
+        </div>
+        <div class="chart-container" id="chart-container-{{ forloop.counter }}">
+            <canvas id="chart-{{ forloop.counter }}" ></canvas>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/Chart.min.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"
+            integrity="sha512-JPcRR8yFa8mmCsfrw4TNte1ZvF1e3+1SdGMslZvmrzDYxS69J7J49vkFL8u6u8PlPJK+H3voElBtUCzaXj+6ig=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script
+            src="https://rawgit.com/chartjs/chartjs.github.io/master/dist/master/Chart.min.js"
+    ></script>
+    <script
+            src="https://cdn.jsdelivr.net/npm/chartjs-plugin-piechart-outlabels"
+    ></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Definindo vários conjuntos de cores
+    var colorSets = [
+    ['rgba(244, 67, 54, 0.8)', 'rgba(255, 235, 59, 0.8)', 'rgba(76, 175, 80, 0.8)', 'rgba(33, 150, 243, 0.8)', 'rgba(156, 39, 176, 0.8)', 'rgba(255, 87, 34, 0.8)'],
+    ['rgba(3, 169, 244, 0.8)', 'rgba(0, 150, 136, 0.8)', 'rgba(139, 195, 74, 0.8)', 'rgba(205, 220, 57, 0.8)', 'rgba(121, 85, 72, 0.8)', 'rgba(158, 158, 158, 0.8)'],
+    ['rgba(255, 152, 0, 0.8)', 'rgba(103, 58, 183, 0.8)', 'rgba(233, 30, 99, 0.8)', 'rgba(63, 81, 181, 0.8)', 'rgba(96, 125, 139, 0.8)', 'rgba(255, 204, 188, 0.8)'],
+    ['rgba(178, 235, 242, 0.8)', 'rgba(197, 202, 233, 0.8)', 'rgba(244, 143, 177, 0.8)', 'rgba(255, 138, 101, 0.8)', 'rgba(159, 168, 218, 0.8)', 'rgba(129, 199, 132, 0.8)']
+];
+
+    {% for resultado in resultados %}
+    var ctx = document.getElementById('chart-{{ forloop.counter }}').getContext('2d');
+    var dataValues = [{% for resposta in resultado.respostas %}{{ resposta.total }}, {% endfor %}];
+    var total = dataValues.reduce((acc, val) => acc + val, 0); // Calcula o total dos valores para a base de percentagem
+    var labelsWithValues = [{% for resposta in resultado.respostas %}"{{ resposta.texto_opcao }}: {{ resposta.total }}", {% endfor %}]; // Labels com valores
+    var colorSetIndex = ({{ forloop.counter0 }} % colorSets.length); // Escolhe um conjunto de cores com base no índice do loop
+    var chart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: labelsWithValues,
+            datasets: [{
+                label: '{{ resultado.pergunta }}',
+                data: dataValues,
+                backgroundColor: colorSets[colorSetIndex],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            legend: {
+                position: 'left',
+                onClick: function (e, legendItem, legend) {
+                    // Sua lógica de clique aqui
+                }
+            },
+            plugins: {
+                outlabels: {
+                    text: '%p',
+                    color: 'white',
+                    stretch: 20,
+                    font: {
+                        resizable: false,
+                        minSize: 90,
+                        maxSize: 90,
+                    },
+                },
+                // Adicionando título ao gráfico
+                title: {
+                    display: true,
+                    text: '{{ resultado.pergunta }}' // Certifique-se de que esta variável é corretamente substituída pelo valor desejado
+                }
+            },
+            tooltips: {
+                enabled: true,  // Ative os tooltips
+                mode: 'index',
+                callbacks: {
+                    label: function(tooltipItem, data) {
+                        var value = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
+                        var total = data.datasets[tooltipItem.datasetIndex].data.reduce((a, b) => a + b, 0);
+                        var percentage = ((value / total) * 100).toFixed(2); // Calcula a percentagem
+                        return data.labels[tooltipItem.index] + ' (' + percentage + '%)';
+                    }
+                }
+            },
+            hover: {
+                mode: null
+            },
+            layout: {
+                padding: {
+                    left: 30,
+                    right: 30,
+                    top: 30,
+                    bottom: 30
+                }
+            },
+        },
+
+    });
+    {% endfor %}
+});
+
+
+
+
+
+</script>
+
+{% endblock %}

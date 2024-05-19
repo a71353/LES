@@ -1,0 +1,211 @@
+{% extends 'app.html' %}
+{% load static %}
+{% block content %}
+<nav class="breadcrumb" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="{% url 'home' %}">Início</a></li>
+    <li class="is-active"><a href="#" aria-current="page">Criar Questionário</a></li>
+  </ul>
+  <div style="padding: 3rem 2vw 1rem">
+    <div style="padding: 3rem 2vw 1rem;">
+
+   <div class="steps is-success">
+
+       <div class="step-item is-completed is-success">
+
+           <div class="step-marker">
+
+               <span class="icon">
+
+                   <i class="mdi mdi-flask mdi-22px"></i>
+
+               </span>
+
+           </div>
+
+           <div class="step-details">
+
+               <p class="step-title">Questionario</p>
+
+           </div>
+
+       </div>
+
+       <div class="step-item is-success">
+
+           <div class="step-marker">
+
+               <span class="icon">
+
+                   <i class="mdi mdi-calendar-check mdi-22px"></i>
+
+               </span>
+
+           </div>
+
+           
+
+           <div class="step-details">
+
+               <p class="step-title">Perguntas</p>
+
+           </div>
+
+       </div>
+
+
+
+       <div class="step-item is-success">
+
+           <div class="step-marker">
+
+               <span class="icon">
+
+                   <i class="mdi mdi-check"></i>
+
+               </span>
+
+           </div>
+
+           <div class="step-details">
+
+               <p class="step-title">Concluir</p>
+
+           </div>
+
+       </div>
+
+   </div>
+<div style="padding: 3rem 2vw 1rem">
+  <form method="POST" action="">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <article class="message is-danger">
+        <div class="message-body">
+          <p style="text-align: center;">
+          {% for error in form.non_field_errors %}
+            <strong>{{ error|escape }}</strong>
+          {% endfor %}
+          </p>
+        </div>
+      </article>
+    {% endif %}
+    
+    <div class="b-steps">
+      <section class="step-content">
+        <div class="step-item">
+          <div style="padding: 1rem 2vw 0px">
+            <hr>
+            <div class="columns">
+              <div class="column">
+                <div class="field">
+                  <label class="label">Nome</label>
+                  <div class="control">
+                    <input class="input " type="text" name="nome" placeholder="Digite o nome do questionário" value="{{ form.nome.value|default_if_none:'' }}" required>
+                    {% if form.nome.errors %}
+                      <p class="help is-danger">{{ form.nome.errors.as_text }}</p>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              <div class="column">
+                <div class="field">
+                  <label class="label">Selecione os anos dos Dias Abertos</label>
+                  <div class="control custom-select-container">
+                    {{ form.dias_abertos }}
+                    {% if form.dias_abertos.errors %}
+                      <p class="help is-danger">{{ form.dias_abertos.errors.as_text }}</p>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              
+            </div>
+
+
+            <div class="columns">
+              <div class="column">
+                <div class="field">
+                  <label class="label">Data de Início de Publicação</label>
+                  <div class="control">
+                    <input class="input" type="date" name="data_publicada" value="{{ form.data_publicada.value|default_if_none:'' }}" required>
+                    {% if form.data_publicada.errors %}
+                      <p class="help is-danger">{{ form.data_publicada.errors.as_text }}</p>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+        
+              <div class="column">
+                <div class="field">
+                  <label class="label">Data de Fim de Publicação</label>
+                  <div class="control">
+                    <input class="input" type="date" name="data_fim_publicacao" value="{{ form.data_fim_publicacao.value|default_if_none:'' }}" required>
+                    {% if form.data_fim_publicacao.errors %}
+                      <p class="help is-danger">{{ form.data_fim_publicacao.errors.as_text }}</p>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+        
+            
+          <div class="column is-8 is-offset-2">
+            <div class="level">
+              <div class="level-left">
+                <a class="button is-large is-outlined" type="button" href="{% url 'questionarios:lista_questionarios' %}">
+                  <span>Cancelar</span>
+                </a>
+              </div>
+              <div class="level-right">
+                <button class="button is-large is-success is-outlined is-link" type="submit">
+                  <span>Submeter</span>
+                  <span class="icon is-medium">
+                    <i class="mdi mdi-check mdi-36px"></i>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </form>
+</div>
+<style>
+  
+  .label {
+    font-weight: normal;
+  }
+  .b-steps .steps .step-items .step-item .step-details .step-title {
+    font-size: 1rem;
+  }
+
+  /* Ajustes de estilo anteriores mantidos */
+
+  .custom-select-container {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #fff;
+    box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1);
+    overflow-y: auto; /* Permite a rolagem apenas se necessário */
+    max-height: 200px; /* Ajuste conforme necessário para evitar rolagem desnecessária */
+    padding: 7px;
+  }
+  
+  .custom-select-container select {
+    width: 100%;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    height: auto; /* Ajusta a altura automaticamente */
+    /* Removendo qualquer possibilidade de rolagem interna no select */
+    overflow-y: hidden; 
+  }
+
+  /* Removendo estilos específicos que podem causar problemas */
+  .custom-select-container select:focus {
+    outline: none;
+  }
+</style>
+{% endblock content %}

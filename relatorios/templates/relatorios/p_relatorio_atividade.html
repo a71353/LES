@@ -1,0 +1,257 @@
+{% extends 'app.html' %}
+{% load static %}
+{% block content %}
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li><a href="{% url 'home' %}">Início</a></li>
+        <li><a href="{% url 'relatorios:lista_relatorios' %}">Relatórios</a></li>
+        <li class='is-active'><a href="#" aria-current="page">Produzir Relatórios</a></li>
+    </ul>
+</nav>
+<div class="container" style="margin-top: 20px;">
+    <div class="columns is-centered">
+        <div class="column is-two-thirds">
+            <div class="box">
+                <form method="POST" action="" id="reportForm">
+                    {% csrf_token %}
+                    <div class="columns">
+                        <div class="column">
+                            <!-- Theme field -->
+                            <div class="field">
+                                <label class="label">Tema do Relatório</label>
+                                <div class="control">
+                                    <div class="select">
+                                        <select name="theme" required>
+                                            <option value="">Selecione o tema</option>
+                                            <option value="transporte">Transporte</option>
+                                            <option value="atividade">Atividade</option>
+                                            <option value="almoco">Almoços</option>
+                                            <option value="presencas">Presenças do Dia Aberto</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Report type field -->
+                            <div class="field">
+                                <label class="label">Tipo de Relatório</label>
+                                <div class="control">
+                                    <div class="select">
+                                        <select name="report_type" required>
+                                            <option value="">Selecione o tipo</option>
+                                            <option value="pdf">PDF</option>
+                                            <option value="csv">CSV</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <!-- Year field -->
+                            <div class="field">
+                                <label class="label">Ano do Dia Aberto</label>
+                                <div class="control">
+                                    <div class="select">
+                                        <select name="year" required>
+                                            <option value="">Selecione o ano</option>
+                                            {% for year in dias_abertos %}
+                                            <option value="{{ year }}">{{ year }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Campo para seleção de dias -->
+                            <div class="field" id="daySelector" style="display: none;">
+                                <label class="label">Dia do Evento</label>
+                                <div class="control">
+                                    <div class="select">
+                                        <select name="day">
+                                            <!-- As opções serão adicionadas dinamicamente -->
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Save to database field -->
+                            <div class="field">
+                                <label class="label">Guardar na base de dados?</label>
+                                <div class="control">
+                                    <label class="radio">
+                                        <input type="radio" name="save_to_database" value="yes" required>
+                                        Sim
+                                    </label>
+                                    <label class="radio">
+                                        <input type="radio" name="save_to_database" value="no" required>
+                                        Não
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field is-grouped">
+                        <div class="control">
+                            <a class="button is-danger" href="{% url 'relatorios:lista_relatorios' %}">Cancelar</a>
+                        </div>
+                        <div class="control">
+                            <button class="button is-success" type="submit">
+                                <span>Exportar</span>
+                                <span class="icon">
+                                    <i class="mdi mdi-arrow-up"></i>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.getElementById('reportForm').addEventListener('submit', function(event) {
+        let theme = this.querySelector('[name="theme"]').value;
+        let reportType = this.querySelector('[name="report_type"]').value;
+        let year = this.querySelector('[name="year"]').value;
+        let day = this.querySelector('[name="day"]').value;
+        if (!theme || !reportType || !year || !day) {
+            event.preventDefault(); // Prevent form submission
+            Swal.fire({
+                title: 'Erro!',
+                text: 'Por favor, preencha todos os campos obrigatórios.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        }
+    });
+    
+    document.querySelector('[name="year"]').addEventListener('change', updateDays);
+    document.querySelector('[name="theme"]').addEventListener('change', updateDays);
+    
+    function updateDays() {
+        const theme = document.querySelector('[name="theme"]').value;
+        const year = document.querySelector('[name="year"]').value;
+        const daySelect = document.querySelector('[name="day"]');
+        const daySelectorContainer = document.getElementById('daySelector');
+        daySelect.innerHTML = ''; // Limpa opções existentes
+    
+        if (theme && year) {
+            fetch(`/relatorios/inscricoes_por_dia/${theme}/${year}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.dias && data.dias.length > 0) {
+                        if (data.dias.length > 1) {
+                            // Adiciona a opção de "Todos os Dias" se houver mais de um dia disponível
+                            const allDaysOption = document.createElement('option');
+                            allDaysOption.value = 'todos';
+                            allDaysOption.textContent = 'Todos os Dias';
+                            daySelect.appendChild(allDaysOption);
+                        }
+    
+                        // Adiciona todos os dias disponíveis ao seletor
+                        data.dias.forEach(day => {
+                            const option = document.createElement('option');
+                            option.value = day;
+                            option.textContent = day;
+                            daySelect.appendChild(option);
+                        });
+    
+                        // Ajusta a visibilidade do seletor
+                        daySelectorContainer.style.display = '';
+                        if (data.dias.length === 1) {
+                            daySelectorContainer.style.display = 'none'; // Oculta o seletor se houver apenas um dia
+                            daySelect.value = data.dias[0]; // Seleciona automaticamente o único dia
+                        }
+                    } else {
+                        daySelect.innerHTML = '<option>Nenhum dia encontrado</option>';
+                        daySelectorContainer.style.display = 'none'; // Oculta se não houver dias
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar dias:', error);
+                    Swal.fire({
+                        title: 'Erro!',
+                        text: 'Não foi possível carregar os dias disponíveis.',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                });
+        } else {
+            daySelectorContainer.style.display = 'none'; // Oculta se tema ou ano não selecionados
+        }
+    }
+
+    /*
+    document.querySelector('[name="theme"]').addEventListener('change', function() {
+    const tema = this.value;
+    const yearSelect = document.querySelector('[name="year"]');
+    yearSelect.innerHTML = ''; // Limpa as opções existentes
+
+    // Adiciona a opção padrão para 'Selecione o ano'
+    const defaultOption = document.createElement('option');
+    defaultOption.textContent = 'Selecione o ano';
+    defaultOption.value = '';
+    yearSelect.appendChild(defaultOption);
+    yearSelect.selectedIndex = 0; // Define como selecionado o prompt de seleção
+
+    if (tema === 'almoco') {
+        fetch('/relatorios/get_anos_disponiveis_almocos/')
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('Falha ao buscar dados');
+                }
+            })
+            .then(data => {
+                if (data.length > 0) {
+                    data.forEach(year => {
+                        const option = document.createElement('option');
+                        option.value = year;
+                        option.textContent = year;
+                        yearSelect.appendChild(option);
+                    });
+                } else {
+                    const noOption = document.createElement('option');
+                    noOption.value = '';
+                    noOption.textContent = 'Nenhum ano disponível';
+                    yearSelect.appendChild(noOption);
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao buscar anos:', error);
+                Swal.fire({
+                    title: 'Erro!',
+                    text: 'Não foi possível carregar os anos disponíveis.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            });
+    } else {
+        // Lógica para outros temas ou repopular com todos os anos
+        // Adicione aqui a lógica para outros temas
+        // Exemplo: repopular a lista com anos disponíveis para outros temas
+    }
+});
+
+// O evento 'change' no seletor de ano continua sendo necessário para atualizar os dias
+document.querySelector('[name="year"]').addEventListener('change', updateDays);
+document.querySelector('[name="theme"]').addEventListener('change', updateDays);
+*/
+
+    
+    
+    
+    
+    
+    </script>
+    
+
+<style>
+    .label {
+        font-weight: bold;
+    }
+    .select select {
+        width: 100%;
+    }
+</style>
+{% endblock content %}

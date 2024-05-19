@@ -1,0 +1,104 @@
+{% extends 'app.html' %}
+
+{% block content %}
+<div class="container">
+    <nav class="breadcrumb" aria-label="breadcrumbs">
+        <ul>
+            <li><a href="#">Início</a></li>
+            <li class="is-active"><a href="#" aria-current="page">Tipo de Estatísticas</a></li>
+        </ul>
+    </nav>
+
+    <div class="columns is-centered">
+        <div class="column is-6">  
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label has-text-weight-bold is-size-5" style="white-space: nowrap;">Selecione o Ano:</label>
+                </div>
+                <div class="field-body">
+                    <div class="field">
+                        <div class="control has-icons-left">
+                            <div class="select is-fullwidth is-info">
+                                <select id="anoSelecionado">
+                                    {% for dia_aberto in diasabertos %}
+                                        <option value="{{ dia_aberto.id }}" {% if dia_aberto.id == selected_year %}selected{% endif %}>
+                                            {{ dia_aberto }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <span class="icon is-small is-left">
+                                    <i class="fa fa-calendar"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br>
+    <br>
+    <br>
+    <br>
+    <!-- Increased margin-top to 'mt-6' for more spacing after the 'Selecione o Ano' section -->
+    <div class="columns is-centered mt-6">  <!-- Adjusted margin class to 'mt-6' for more space -->
+        <div class="column is-6">
+            <div class="columns is-multiline is-variable is-3">
+                <!-- Adjusted to place two buttons per row -->
+                <div class="column is-6">
+                    <button class="button is-primary is-fullwidth" onclick="irParaEstatisticaTransporte()">
+                        <span class="icon">
+                            <i class="fa fa-bus"></i>
+                        </span>
+                        <strong>Estatísticas sobre Transporte</strong>
+                    </button>
+                </div>
+                <div class="column is-6">
+                    <a class="button is-primary is-fullwidth" href="#">
+                        <span class="icon">
+                            <i class="fa fa-info-circle"></i>
+                        </span>
+                        <strong>Estatísticas Gerais do Dia Aberto</strong>
+                    </a>
+                </div>
+                <div class="column is-6">
+                    <a class="button is-primary is-fullwidth" onclick="irParaEstatisticaAlmoco()">
+                        <span class="icon">
+                            <i class="fa fa-utensils"></i>
+                        </span>
+                        <strong>Estatísticas sobre Almoços</strong>
+                    </a>
+                </div>
+                <div class="column is-6">
+                    <a class="button is-primary is-fullwidth" onclick="irParaEstatisticaAtividadeRoteiro()">
+                        <span class="icon">
+                            <i class="fa fa-map-marker"></i>
+                        </span>
+                        <strong>Estatísticas sobre Atividades/Roteiros</strong>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function irParaEstatisticaTransporte() {
+        var diaAbertoId = document.getElementById('anoSelecionado').value;
+        var baseUrl = 'estatistica_transporte/';
+        location.href = baseUrl + diaAbertoId;
+    }
+    function irParaEstatisticaAlmoco() {
+        var diaAbertoId = document.getElementById('anoSelecionado').value;
+        var baseUrl = 'estatisticas_almocos/';
+        location.href = baseUrl + diaAbertoId;
+    }
+    function irParaEstatisticaAtividadeRoteiro() {
+        var diaAbertoId = document.getElementById('anoSelecionado').value;
+        var baseUrl = 'estatisticaAtividade/';
+        location.href = baseUrl + diaAbertoId;
+    }
+</script>
+{% endblock %}

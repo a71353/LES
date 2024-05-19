@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+{% load static %}
+{% load inscricoes_extras %}
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscrição no Dia Aberto {{ ano }} - Universidade do Algarve</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+        }
+
+        .section-header {
+            text-align: center;
+            padding: 10px;
+            background-color: #eee;
+            border: 1px solid #000;
+            font-weight: bold;
+            font-size: 18px; /* Aumentar o tamanho da fonte para cabeçalhos de seção */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px; /* Espaçamento superior para separar as seções */
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .has-text-centered {
+            text-align: center;
+        }
+
+        .header-large {
+            font-size: 24px; /* Tamanho de fonte maior para o cabeçalho do roteiro */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="has-text-centered">
+        <img src="{{ 'img/ualg-logo.png'|get64 }}" alt="UAlg Logo" height="100">
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <img src="{{ 'img/logo-large.png'|get64 }}" alt="Dia Aberto Logo" height="100">
+        <div><pdf:spacer height="20px" /></div>
+        <h1>Dia Aberto {{ ano }} - Universidade do Algarve</h1>
+    </div>
+
+    <div class="section-header header-large">Detalhes do Roteiro</div>
+    <table>
+        <tr>
+            <th>Nome do Roteiro</th>
+            <td>{{ roteiro.nome }}</td>
+        </tr>
+        <tr>
+            <th>Descrição</th>
+            <td>{{ roteiro.descricao }}</td>
+        </tr>
+        <tr>
+            <th>Público-Alvo</th>
+            <td>{{ roteiro.publicoalvo }}</td>
+        </tr>
+        <tr>
+            <th>Máximo de Participantes</th>
+            <td>{{ roteiro.participantesmaximo }}</td>
+        </tr>
+        <tr>
+            <th>Duração Esperada</th>
+            <td>{{ roteiro.duracaoesperada }} minutos</td>
+        </tr>
+    </table>
+
+    <div class="section-header">Atividades do Roteiro</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Nome da Atividade</th>
+                <th>Espaço</th>
+                <th>Edifício</th>
+                <th>Andar</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for atividade in atividades %}
+            <tr>
+                <td>{{ atividade.nome }}</td>
+                <td>{{ atividade.espacoid.nome }}</td>
+                <td>{{ atividade.espacoid.edificio.nome }}</td>
+                <td>{{ atividade.espacoid.andar }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="section-header">Sessao do Roteiro</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Dia</th>
+                <th>Hora</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sessao in sessoes %}
+            <tr>
+                <td>{{ sessao.dia }}</td>
+                <td>{{sessao.horarioid.inicio}} - {{sessao.horarioid.fim}} </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+
+    
+
+</body>
+</html>

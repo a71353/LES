@@ -1,0 +1,226 @@
+{% extends 'app.html' %}
+{% load static %}
+
+{% block title %}- Estatísticas do Almoço{% endblock title %}
+
+{% block content %}
+<div id="tempo-medio">
+    <h2 class="title has-text-grey is-uppercase" style="font-size: 2.0rem;">
+        Consultar estatisticas de questionarios de almoços
+    </h2>
+    <div class="columns">
+        <div class="column">
+            <nav aria-label="breadcrumbs" class="breadcrumb">
+                <ul>
+                    <li><a href="/">Início</a></li>
+                    <li class="is-active"><a href="/estatisticas/almocos">Consultar estatisticas de almoços {{selecionado}}</a></li>
+                </ul>
+            </nav>
+            {% if nome_questionario %}
+                <h3 class="title is-4" style="color: #7A7A7A;">Questionário: <span style="color: black;"> {{ nome_questionario }}</span></h3>
+            {% endif %}
+            {% if data_publicacao %}
+                <h3 class="title is-4" style="color: #7A7A7A;">Data de Publicação: <span style="color: black;"> {{ data_publicacao }}</span></h3>
+            {% endif %}
+            {% if data_expiracao %}
+                <h3 class="title is-4" style="color: #7A7A7A;">Data de Expiração: <span style="color: black;"> {{ data_expiracao }}</span></h3>
+            {% endif %}
+            {% if respostas == "True" %}
+            <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                <table class="table" style="margin-right: 20px;">
+                    <thead>
+                        <tr>
+                            <th style="background-color: rgb(253, 158, 147); text-align: center;">Participantes</th>
+                        </tr>
+                    </thead>
+                    <tbody style="background-color: aliceblue;">
+                        <tr>
+                            <td style="text-align: center;">
+                                {{ participantes }}
+                            </td>
+                        </tr>  
+                    </tbody>
+                </table>
+                <button id="exportPDF" style="font-size: 18px; padding: 12px 24px; background-color: black; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                    Exportar para PDF
+                </button>
+                <a href="{% url 'estatisticas:exportar_csv' %}?diaaberto={{ diaabertoID }}" class="button is-primary">
+                    Exportar para CSV
+                </a>
+            </div>
+            As informacoes dos graficos estao em Porcentagens"%"
+                <div>&nbsp;</div>
+                {% for grafico in respostas_almocos_escolhas_multiplas %}
+                    <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 2rem;">
+                        <p style="font-size: 18px; margin-bottom: 1rem;">{{ forloop.counter }}: {{ grafico.pergunta }}</p>
+                        <div style="height: 600px; width: 600px;">
+                            <canvas id="chart{{ grafico.id }}"></canvas>
+                        </div>
+                    </div>
+                {% endfor %}
+                <div>&nbsp;</div>
+            {% elif respostas == "No" %}
+            <div style="height: 650px; width: 650px; margin-left: 20%; color: black; font-size: 24px;">
+                Nao há questionários para o Dia Aberto {{ano_diaaberto}}
+            </div>
+            {% else %}
+            <div style="height: 650px; width: 650px; margin-left: 20%; color: black; font-size: 24px;">
+                Nenhum participante respondeu ao Questionario
+            </div>
+            {% endif %}
+       
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.17/vue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.3.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.13/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+    var app = new Vue({
+        delimiters: ["[[", "]]"],
+        el: '#tempo-medio',
+        data() {
+            return {
+                selectedOption: '',
+                respostas: [],
+            }
+        },
+        mounted() {
+            this.respostas = JSON.parse("{{ respostas_escolhas_multiplas_json|escapejs }}");
+            for (let i = 0; i < this.respostas.length; i++) {
+                let data = [];
+                let labels = [];
+                let colors = [];
+                this.respostas[i].respostas.forEach(function(objeto) {
+                    labels.push(objeto.opcao);
+                    data.push(objeto.count);
+                });
+                for (let m = 0; m < this.respostas[i].respostas.length; m++) {
+                    colors.push(this.corAleatoria())
+                }
+                this.criarGraficodeBarras(i, data, labels, colors);
+            }
+            document.getElementById('exportPDF').addEventListener('click', this.exportarPDF);
+        },
+        methods: {
+            corAleatoria() {
+                // Geração de cores claras
+                var r = Math.floor(Math.random() * 156) + 100; // Valores entre 100 e 255 para vermelho
+                var g = Math.floor(Math.random() * 156) + 100; // Valores entre 100 e 255 para verde
+                var b = Math.floor(Math.random() * 156) + 100; // Valores entre 100 e 255 para azul
+                var alpha = 0.6; // Aumentando a opacidade para melhor contraste
+                return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+            },
+            criarGraficodeBarras(id, dados, labels, colors) {
+                var name = "chart" + id;
+                var ctx = document.getElementById(name).getContext('2d');
+            
+                // Filtrar dados, labels e cores para remover elementos com dados igual a 0
+                let filteredData = [];
+                let filteredLabels = [];
+                let filteredColors = [];
+            
+                dados.forEach((data, index) => {
+                    if (data > 0) { // Só adiciona se o dado for maior que 0
+                        filteredData.push(data);
+                        filteredLabels.push(labels[index]);
+                        filteredColors.push(colors[index]);
+                    }
+                });
+            
+                var myChart = new Chart(ctx, {
+                    plugins: [ChartDataLabels],
+                    type: 'pie',
+                    data: {
+                        labels: filteredLabels,
+                        datasets: [{
+                            label: "Selecionaram",
+                            data: filteredData,
+                            backgroundColor: filteredColors,
+                            borderColor: filteredColors.map(color => color.replace('0.2', '1')),
+                            borderWidth: 2,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            datalabels: {
+                                color: 'black',
+                                anchor: 'end',
+                                align: 'start',
+                                offset: 8,
+                                font: {
+                                    weight: 'bold',
+                                    size: 25
+                                },
+                                formatter: (value, ctx) => {
+                                    let sum = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                    let percentage = (value / sum * 100).toFixed(2) + "%";
+                                    return percentage;
+                                }
+                            }
+                        },
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+            ,
+            exportarPDF() {
+                var doc = new jspdf.jsPDF();
+                var nome_questionario = "Questionario: " + "{{ nome_questionario }}";
+                var tema_questionario = "Tema: Almoço";
+                var data_publicada = "Data de Publicação: " + "{{ data_publicacao }}";
+                var data_expiracao = "Data de Expiração: " + "{{ data_expiracao }}";
+                // Posição inicial do PDF
+                var y = 20;
+                doc.text(10, 10, nome_questionario);
+                doc.text(10, y, tema_questionario);
+                y += 10;
+                doc.text(10, y, data_publicada);
+                y += 10;
+                doc.text(10, y, data_expiracao);
+                y += 10;
+                var pageWidth = doc.internal.pageSize.getWidth();
+                var imgWidth = 150;
+                // Iterar sobre cada gráfico
+                for (let i = 0; i < this.respostas.length; i++) {
+                    if (y > 150) {
+                        doc.addPage();
+                        y = 10;
+                    }
+                    var txt = String(i + 1) + ") " + String(this.respostas[i].pergunta);
+                    doc.text(20, y, txt);
+                    y += 10;
+                    var imgData = document.getElementById('chart' + i).toDataURL('image/png');
+                    var x = (pageWidth - imgWidth) / 2; // Calcular a posição horizontal para centralizar a imagem
+                    doc.addImage(imgData, 'PNG', x, y, imgWidth, 150);
+                    y += 170;
+                    var data = [];
+                    var labels = [];
+                    this.respostas[i].respostas.forEach(function(objeto) {
+                        labels.push(objeto.opcao);
+                        var value = String(objeto.count) + "%";
+                        data.push(value);
+                    });
+                    var tableData = [labels, data];
+                    var tableTop = y + 10;
+                    doc.autoTable({
+                        startY: tableTop,
+                        head: [tableData[0]],
+                        body: tableData.slice(1),
+                    });
+                    var tableBottom = doc.lastAutoTable.finalY + 10;
+                    y = tableBottom > y ? tableBottom : y;
+                }
+                doc.save('graficos.pdf');
+            }
+        },
+    });
+</script>
+{% endblock scripts %}

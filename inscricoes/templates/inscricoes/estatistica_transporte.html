@@ -1,0 +1,222 @@
+{% extends 'app.html' %}
+{% load static %}
+
+{% block title %}Estatísticas{% endblock %}
+
+{% block load %}
+<link rel="stylesheet" href="{% static 'css/Chart.min.css' %}">
+<link rel="stylesheet" href="{% static 'css/Chart.min.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+<style>
+    /* Estilos adicionais para o botão de exportação */
+    #export-pdf-button {
+        background-color: #db3a3a; /* Cor de fundo verde */
+        color: rgb(255, 255, 255); /* Texto branco */
+        border: none; /* Sem borda */
+        padding: 10px 20px; /* Padding para tornar o botão maior */
+        border-radius: 5px; /* Bordas arredondadas */
+        cursor: pointer; /* Cursor do tipo ponteiro */
+        font-size: 16px; /* Tamanho da fonte */
+    }
+    #export-pdf-button:hover {
+        background-color: #d64141; /* Cor mais escura ao passar o mouse */
+    }
+    #export-csv-button {
+        background-color: #4CAF50; /* Cor de fundo verde */
+        color: white; /* Texto branco */
+        border: none; /* Sem borda */
+        padding: 10px 20px; /* Padding para tornar o botão maior */
+        border-radius: 5px; /* Bordas arredondadas */
+        cursor: pointer; /* Cursor do tipo ponteiro */
+        font-size: 16px; /* Tamanho da fonte */
+        text-align: center;
+        text-decoration: none; /* Remove underline de links */
+        display: inline-block; /* Garante que padding e height são respeitados */
+    }
+    #export-csv-button:hover {
+        background-color: #45a049; /* Cor mais escura ao passar o mouse */
+    }
+    .center {
+    display: flex;
+    justify-content: center; /* Centra los elementos horizontalmente */
+    align-items: center; /* Centra los elementos verticalmente (si es necesario) */
+    gap: 20px; /* Ajusta el espacio entre elementos */
+}
+
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div>
+    <h2>Resultados do Questionário sobre transporte</h2>
+    <br>
+    <br>
+    <div class="center">
+    <button id="export-pdf-button"><i class="fas fa-download"></i> Exportar para PDF</button>
+    <a href="{% url 'inscricoes:exportar_estatisticas_csv' diaaberto.id %}" class="button" id="export-csv-button"><i class="fas fa-download"></i> Exportar para CSV</a>
+    </div>
+    <div class="columns is-multiline">
+        {% for resultado in resultados %}
+            <div class="column is-half">
+                <div style="padding: 3rem 2vw 1rem;">
+                    <canvas id="chart-{{ forloop.counter }}"></canvas>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+   </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/Chart.min.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"
+            integrity="sha512-JPcRR8yFa8mmCsfrw4TNte1ZvF1e3+1SdGMslZvmrzDYxS69J7J49vkFL8u6u8PlPJK+H3voElBtUCzaXj+6ig=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script
+            src="https://rawgit.com/chartjs/chartjs.github.io/master/dist/master/Chart.min.js"
+    ></script>
+    <script
+            src="https://cdn.jsdelivr.net/npm/chartjs-plugin-piechart-outlabels"
+    ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Definindo vários conjuntos de cores
+    var colorSets = [
+    ['rgba(204, 67, 54, 0.8)', 'rgba(205, 205, 100, 0.8)', 'rgba(76, 175, 80, 0.8)', 'rgba(33, 150, 243, 0.8)', 'rgba(156, 39, 176, 0.8)', 'rgba(255, 87, 34, 0.8)'],
+    ['rgba(3, 169, 244, 0.8)', 'rgba(0, 150, 136, 0.8)', 'rgba(139, 195, 74, 0.8)', 'rgba(205, 220, 57, 0.8)', 'rgba(121, 85, 72, 0.8)', 'rgba(158, 158, 158, 0.8)'],
+    ['rgba(255, 152, 0, 0.8)', 'rgba(103, 58, 183, 0.8)', 'rgba(233, 30, 99, 0.8)', 'rgba(63, 81, 181, 0.8)', 'rgba(96, 125, 139, 0.8)', 'rgba(255, 204, 188, 0.8)'],
+    ['rgba(178, 235, 242, 0.8)', 'rgba(197, 202, 233, 0.8)', 'rgba(244, 143, 177, 0.8)', 'rgba(255, 138, 101, 0.8)', 'rgba(159, 168, 218, 0.8)', 'rgba(129, 199, 132, 0.8)']
+];
+
+    {% for resultado in resultados %}
+    var ctx = document.getElementById('chart-{{ forloop.counter }}').getContext('2d');
+    var dataValues = [{% for resposta in resultado.respostas %}{{ resposta.total }}, {% endfor %}];
+    var labelsWithValues = [{% for resposta in resultado.respostas %}"{{ resposta.texto_opcao }}: {{ resposta.total }}", {% endfor %}]; // Atualizado para usar 'texto_opcao'
+    var colorSetIndex = ({{ forloop.counter0 }} % colorSets.length); // Escolhe um conjunto de cores com base no índice do loop
+    var chart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: labelsWithValues,
+            datasets: [{
+                label: '{{ resultado.pergunta }}',
+                data: dataValues,
+                backgroundColor: colorSets[colorSetIndex],
+                borderWidth: 1
+            }]
+        },
+        options: {
+    responsive: true,
+    legend: {
+        position: 'left',
+        onClick: function (e, legendItem, legend) {
+            // Sua lógica de clique aqui
+        }
+    },
+    plugins: {
+        outlabels: {
+            text: '%p',
+            color: 'white',
+            stretch: 20,
+            font: {
+                resizable: false,
+                minSize: 90,
+                maxSize: 90,
+            },
+        },
+    },
+    title: { // Aqui está o ajuste
+        display: true,
+        text: '{{ resultado.pergunta }}' // Certifique-se de que esta variável é corretamente substituída pelo valor desejado
+    },
+    tooltips: {
+        enabled: true,  // Ative os tooltips
+        mode: 'index',
+        callbacks: {
+            label: function(tooltipItem, data) {
+                var value = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
+                var total = data.datasets[tooltipItem.datasetIndex].data.reduce((a, b) => a + b, 0);
+                var percentage = ((value / total) * 100).toFixed(2); // Calcula a percentagem
+                return data.labels[tooltipItem.index] + ' (' + percentage + '%)';
+            }
+        }
+    },
+    hover: {
+        mode: null
+    },
+    layout: {
+        padding: {
+            left: 30,
+            right: 30,
+            top: 30,
+            bottom: 30
+        }
+    },
+},
+
+
+    });
+    {% endfor %}
+});
+
+
+document.getElementById('export-pdf-button').addEventListener('click', function() {
+    exportChartsToPDF();
+});
+
+function exportChartsToPDF() {
+    var jsPDF = window.jspdf.jsPDF;
+    
+    // Cria um objeto de documento PDF
+    var doc = new jsPDF();
+    
+    // Define o título e o ano do Dia Aberto
+    var tituloDocumento = 'Resultados estatísticos do Questionário sobre o tema Transporte do Dia Aberto';
+    var anoDiaAberto = '2024';  // Substitua pelo ano relevante
+
+    // Adiciona o título ao documento
+    doc.setFontSize(15); // Tamanho da fonte para o título
+    doc.text(tituloDocumento, 105, 20, { align: 'center' }); // Centraliza o título na página
+    doc.setFontSize(12); // Tamanho da fonte para o subtítulo
+    doc.text('Ano do Dia Aberto: ' + anoDiaAberto, 105, 30, { align: 'center' }); // Adiciona o ano abaixo do título
+
+    // Ajusta a resolução dos gráficos para o PDF
+    var pdfWidth = 210; // Largura do documento PDF em mm (A4)
+    var pdfHeight = 297; // Altura do documento PDF em mm (A4)
+    var scaleFactor = 4; // Fator de escala para aumentar a resolução
+    var yOffset = 40; // Offset inicial da coordenada y para o primeiro gráfico, ajustado para dar espaço ao título
+
+    // Loop através de cada gráfico e adiciona ao PDF
+    {% for resultado in resultados %}
+    var canvas = document.getElementById('chart-{{ forloop.counter }}');
+    var imgData = canvas.toDataURL('image/png');
+
+    // Calcula as dimensões do gráfico no PDF com base no fator de escala
+    var pdfChartWidth = canvas.width / scaleFactor;
+    var pdfChartHeight = canvas.height / scaleFactor;
+
+    // Adiciona a imagem ao PDF, ajustando sua resolução e coordenadas
+    doc.addImage(imgData, 'PNG', 10, yOffset, pdfChartWidth, pdfChartHeight);
+
+    // Atualiza o offset y para o próximo gráfico
+    yOffset += pdfChartHeight + 10;
+
+    // Verifica se devemos adicionar uma nova página a cada dois gráficos
+    if ({{ forloop.counter }} % 2 === 0 && {{ forloop.counter }} !== {{ resultados|length }}) {
+        doc.addPage();
+        yOffset = 40; // Reseta o offset y para o início da nova página, ajustado para dar espaço ao título
+    }
+
+    {% endfor %}
+
+    // Salva o PDF
+    doc.save('Resultados_Dia_Aberto_' + anoDiaAberto + '.pdf');
+}
+
+</script>
+{% endblock %}

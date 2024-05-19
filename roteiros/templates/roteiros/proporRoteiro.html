@@ -1,0 +1,248 @@
+{% extends 'app.html' %}
+
+{% block content %}
+<form method="POST" action="" id='frm'>
+    <div id="proporatividade" style="display: content">
+        <nav class="breadcrumb" aria-label="breadcrumbs">
+            <ul>
+              <li><a href="{% url 'home' %}">Início</a></li>
+              <li><a href="{% url 'roteiros:criarRoteiro' %}">Meu Roteiros</a></li>
+              <li class="is-active"><a href="" aria-current="page">Roteiro</a></li>
+            </ul>
+          </nav>
+        <div style="padding: 3rem 2vw 1rem;">
+
+            <div class="steps is-success">
+                <div class="step-item is-completed is-success">
+                    <div class="step-marker">
+                        <span class="icon">
+                            <i class="mdi mdi-flask mdi-22px"></i>
+                        </span>
+                    </div>
+                    <div class="step-details">
+                        <p class="step-title">Roteiro</p>
+                    </div>
+                </div>
+
+                <div class="step-item is-success">
+                    <div class="step-marker">
+                        <span class="icon">
+                            <i class="mdi mdi-calendar-check mdi-22px"></i>
+                        </span>
+                    </div>
+                    <div class="step-details">
+                        <p class="step-title">Sessoes</p>
+                    </div>
+                </div>
+
+                <div class="step-item is-success">
+                    <div class="step-marker">
+                        <span class="icon">
+                            <i class="mdi mdi-check"></i>
+                        </span>
+                    </div>
+                    <div class="step-details">
+                        <p class="step-title">Concluir</p>
+                    </div>
+                </div>
+            </div>
+
+            <section class="step-content">
+                <div class="step-item">
+                    <div style="padding: 1rem 2vw 0px">
+                        <hr>
+                        <h2 class="title has-text-grey is-uppercase" style="font-size: 1.2rem">Informação do Roteiro</h2>
+                        <div class="columns">
+                            <div class="column">
+                                <div class="field">
+                                    <label class="label">Nome Roteiro</label>
+                                    <div class="control">{{ form.nome }}</div>
+                                </div>
+                            </div>
+                            <div class="column">
+                                <div class="field">
+                                    <label class="label">Máximo de Participantes</label>
+                                    <div class="control">
+                                        <input class="input is-fullwidth" type="number" name="participantesmaximo" value="{{ form.participantesmaximo.value }}" placeholder="Máximo de Participantes" min="0">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="column">
+                                <div class="field">
+                                    <label class="label">Público-Alvo</label>
+                                    <div class="control">
+                                        <div class="select is-fullwidth">{{ form.publicoalvo }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="column">
+                                <div class="field">
+                                <label class="label">Descrição</label>
+                                <div class="control">
+                                    {{form.descricao}}
+                                </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <section class="field" style="padding: 1rem 2vw 0px">
+                        <h2 class="title has-text-grey is-uppercase" style="font-size: 1.2rem">Selecionar Atividades</h2>
+                        <div class="columns">
+                            <div class="column is-6">
+                                <div class="field">
+                                    <label class="label">Atividade</label>
+                                    <div class="control">
+                                        <div class="select is-fullwidth">
+                                            <select id="atividadeSelect">
+                                                <option value="">Escolha uma atividade</option>
+                                                {% for atividade in atividades %}
+                                                <option value="{{ atividade.id }}" data-nome="{{ atividade.nome }}" data-duracao="{{ atividade.duracaoesperada }}">{{ atividade.nome }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="column is-2">
+                                <div class="field">
+                                    <label class="label">&nbsp;</label>
+                                    <div class="control">
+                                        <button type="button" class="button is-success" onclick="adicionarAtividadeSelecionada()">
+                                            <span class="icon is-small">
+                                                <i class="mdi mdi-plus"></i>
+                                            </span>
+                                            <span>Adicionar Atividade</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section class="field" style="padding: 1rem 2vw 0px">
+                        <h2 class="title has-text-grey is-uppercase" style="font-size: 1.2rem">Atividades Selecionadas</h2>
+                        <ul id="listaAtividadesSelecionadas" class="selected-activities-list">
+                            {% for atividade in atividades %}
+                                {% if atividade.id in selecionadas %}
+                                    <li class="atividade-item box">
+                                        <div class="activity-info">
+                                            <strong>{{ atividade.nome }}</strong> - {{ atividade.duracaoesperada }} minutos
+                                            <button type="button" class="button is-small is-danger is-light" style="margin-left: 10px;" onclick="this.parentElement.parentElement.remove()">
+                                                Remover
+                                            </button>
+                                        </div>
+                                        <input type="hidden" name="atividades_ids" value="{{ atividade.id }}">
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </section>
+                    
+                </div>
+    
+            </section>
+
+            
+            <div style="padding-top: 2rem;">
+                <div class="level">
+                    <div class="level-left">
+                        <a href="{% url 'roteiros:criarRoteiro' %}" class="button is-medium is-outlined" type="button">Cancelar</a>
+                    </div>
+                    <div class="level-right">
+                        <button type="submit" class="button is-medium is-success is-outlined is-link">
+                            <span>Próximo</span>
+                            <span class="icon is-medium">
+                                <i class="mdi mdi-forward mdi-36px"></i>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    {% csrf_token %}
+</form>
+
+<script>
+    function adicionarAtividadeSelecionada() {
+        const select = document.getElementById('atividadeSelect');
+        const selectedOption = select.options[select.selectedIndex];
+        
+        if (selectedOption.value !== "") {
+            const lista = document.getElementById('listaAtividadesSelecionadas');
+
+            // Verificar se a atividade já foi adicionada
+            const existingItems = lista.querySelectorAll('input[name="atividades_ids"]');
+            for (let item of existingItems) {
+                if (item.value === selectedOption.value) {
+                    return; // A atividade já está na lista, não adicionar novamente
+                }
+            }
+
+            // Criar um item da lista
+            const li = document.createElement('li');
+            li.className = 'atividade-item box';
+
+            // Adicionar o nome e duração da atividade com estilização
+            const activityInfo = document.createElement('div');
+            activityInfo.className = 'activity-info';
+            activityInfo.innerHTML = `<strong>${selectedOption.getAttribute('data-nome')}</strong> - ${selectedOption.getAttribute('data-duracao')} minutos`;
+            li.appendChild(activityInfo);
+
+            // Criar um botão de remoção
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.className = 'button is-small is-danger is-light';
+            removeButton.style.marginLeft = '10px';
+            removeButton.innerText = 'Remover';
+            removeButton.onclick = function() {
+                lista.removeChild(li);
+            };
+
+            activityInfo.appendChild(removeButton);
+
+            // Criar um input oculto
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'atividades_ids';
+            hiddenInput.value = selectedOption.value;
+            li.appendChild(hiddenInput);
+
+            // Adicionar o item à lista
+            lista.appendChild(li);
+        }
+    }
+</script>
+
+<style>
+    .label {
+        font-weight: normal;
+    }
+
+    .b-steps .steps .step-items .step-item .step-details .step-title {
+        font-size: 1rem;
+    }
+
+    .selected-activities-list {
+        list-style-type: none;
+        padding: 0;
+    }
+
+    .atividade-item {
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 5px;
+        background-color: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .activity-info {
+        display: flex;
+        align-items: center;
+    }
+</style>
+{% endblock content %}

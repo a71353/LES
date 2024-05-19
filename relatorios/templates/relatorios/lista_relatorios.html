@@ -1,0 +1,57 @@
+{% extends 'app.html' %}
+{% block content %}
+{% load custom %}
+<div class="columns is-centered">
+    <div class="column is-8">
+        <nav class="breadcrumb" aria-label="breadcrumbs">
+            <ul>
+                <li><a href="#">Início</a></li>
+                <li class="is-active"><a href="#" aria-current="page">Relatórios</a></li>
+            </ul>
+        </nav>
+        <div class="buttons">
+            <a href="{% url 'relatorios:p_relatorio' %}" class="button is-success">
+                <span class="icon">
+                    <i class="mdi mdi-plus"></i>
+                </span>
+                <span>Produzir Novo Relatório</span>
+            </a>
+        </div>
+        <div class="box" style="padding: 20px; width: auto;">
+            <table class="table is-fullwidth is-striped is-hoverable">
+                <thead>
+                    <tr>
+                        <th>Relatório</th>
+                        <th>Data de Exportação</th>
+                        <th>Tipo</th>
+                        <th>Opções</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if has_relatorios %}
+                        {% for relatorio in relatorios %}
+                        <tr>
+                            <td>{{ relatorio.name }}</td>
+                            <td>{{ relatorio.name|parse_timestamp }}</td>
+                            <td>{{ relatorio.type }}</td>
+                            <td>
+                                <div class="buttons are-small">
+                                    <a href="{% url 'relatorios:abrir_relatorio' relatorio.url_safe_name %}" class="button is-info" target="_blank" rel="noopener noreferrer">Abrir</a>
+                                    <a href="{% url 'relatorios:deletar_relatorio' relatorio.url_safe_name %}" class="button is-danger" onclick="return confirm('Tem certeza que deseja deletar este relatório?');">Eliminar</a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="has-text-centered">Não foram guardados relatórios.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+{% block scripts %}
+{% endblock scripts %}

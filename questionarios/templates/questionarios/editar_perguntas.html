@@ -1,0 +1,106 @@
+{% extends 'app.html' %}
+{% load static %}
+{% block content %}
+<div class="container">
+    <div class="columns is-centered">
+        <div class="column is-half">
+            <h1 class="title">Editar Pergunta</h1>
+            <form method="POST" action="{% url 'questionarios:editar_perguntas' pergunta.id %}">
+                {% csrf_token %}
+                <div class="columns">
+                    <div class="column is-6">
+                        <div class="field">
+                            <label class="label">Texto da Pergunta</label>
+                            <div class="control">
+                                <input class="input" type="text" name="texto" placeholder="Digite o texto da pergunta" value="{{ pergunta.texto }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column is-4">
+                        <div class="field">
+                            <label class="label">Tipo de Resposta</label>
+                            <div class="control">
+                                <input class="input" type="text" disabled value="{% if pergunta.tipo_resposta == 'texto_livre' %}Texto Livre{% elif pergunta.tipo_resposta == 'multipla_escolha' %}Escolha Múltipla{% elif pergunta.tipo_resposta == 'inteiro' %}Inteiro{% endif %}">
+                                <!-- Campo oculto para enviar o tipo de resposta -->
+                                <input type="hidden" name="tipo_resposta" value="{{ pergunta.tipo_resposta }}">
+                            </div>
+                        </div>
+                    </div>                    
+                </div>
+                <div id="opcoesArea" style="{% if pergunta.tipo_resposta != 'multipla_escolha' %}display:none;{% endif %}">
+                    <div class="field">
+                        <label class="label">Opções</label>
+                        <div id="opcoesContainer">
+                            {% for opcao in pergunta.opcoes.all %}
+                            <div class="field" style="display: flex; align-items: center; justify-content: space-between;">
+                                <div class="control is-expanded">
+                                    <input class="input" type="text" name="opcoes" value="{{ opcao.texto_opcao }}" placeholder="Digite a opção">
+                                </div>
+                                <div class="control">
+                                    <button type="button" class="deleteOpcao" style="border: none; background: none; cursor: pointer;">
+                                        <i class="fas fa-trash" style="color: red;"></i>
+                                    </button>
+                                </div>
+                                
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <button type="button" class="button" onclick="adicionarOpcao()">
+                        <i class="fas fa-plus"></i> Adicionar Opção
+                    </button>
+                </div>
+                <div class="field"  style="margin-top: 2em;">
+                    <label class="label">Tema</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            {{ form.tema }}
+                        </div>
+                    </div>
+                </div>
+                <div class="field is-grouped">
+                    <div class="control">
+                        <button class="button is-link" type="submit">Salvar Alterações</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+
+{% block scripts %}
+<script>
+    function adicionarOpcao() {
+        // Criar um novo elemento de opção
+        const novaOpcao = document.createElement('div');
+        novaOpcao.classList.add('control', 'opcao');
+        novaOpcao.innerHTML = `<input class="input" type="text" name="opcoes" placeholder="Digite a opção">
+                               <button type="button" class="deleteOpcao">Remover</button>`;
+
+        // Adicionar evento de clique para remover a opção
+        novaOpcao.querySelector('.deleteOpcao').addEventListener('click', function() {
+            this.parentNode.remove();
+        });
+
+        // Adicionar a nova opção ao contêiner
+        document.getElementById('opcoesContainer').appendChild(novaOpcao);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Adiciona um event listener em todos os botões de delete
+        document.querySelectorAll('.deleteOpcao').forEach(button => {
+            button.addEventListener('click', function() {
+                // Encontra o elemento 'div.field' mais próximo e o remove
+                this.closest('div.field').remove();
+            });
+        });
+    });
+
+
+    
+    
+</script>
+
+{% endblock scripts %}

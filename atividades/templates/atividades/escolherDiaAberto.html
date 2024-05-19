@@ -1,0 +1,12 @@
+{% extends 'app.html' %}
+
+{% block content %}
+<h2>Escolha o Dia Aberto para Duplicar a Atividade</h2>
+<ul>
+    {% for dia in dias_abertos %}
+    <li>
+        <a href="{% url 'atividades:duplicarAtividade' id=atividade_id novo_diaaberto_id=dia.id %}">{{ dia.ano}}</a>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}

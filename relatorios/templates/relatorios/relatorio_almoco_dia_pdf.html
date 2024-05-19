@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+{% load static %}
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscrição no Dia Aberto {{ ano }} - Universidade do Algarve</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .page-header img {
+            height: 100px;
+        }
+
+        .section-header {
+            text-align: center;
+            padding: 3px;
+            background-color: #eee;
+            border: 1px solid #000;
+            font-weight: bold;
+        }
+
+        .turma-table {
+            width: 100%;
+            margin-bottom: 15px;
+            border-collapse: collapse;
+        }
+
+        .turma-table th, .turma-table td {
+            padding: 3px;
+            border: 1px solid #000;
+            text-align: center;
+        }
+
+        .turma-table thead th {
+            background-color: #eee;
+        }
+
+        .has-text-centered {
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="footer_content">Dia Aberto da UAlg {{ ano }} - página <pdf:pagenumber> de <pdf:pagecount></div>
+
+    {% for dia, data in dados_por_dia.items %}
+    <div {% if not forloop.first %}style="page-break-before: always;"{% endif %}>
+        <div class="page-header">
+            <img src="{{ logo_url }}" alt="UAlg Logo">
+            <img src="{{ logo_url2 }}" alt="Dia Aberto Logo">
+            <h1>Dia Aberto {{ ano }} - Universidade do Algarve - Dia {{ dia }}</h1>
+        </div>
+        <div class="section-header">Relatório sobre Almoços - Dia {{ dia }}</div>
+        <hr>
+        <table class="turma-table" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th width="10%">Nº Grupo</th>
+                    <th width="10%">Escola</th>
+                    <th width="10%">Ano/Turma</th>
+                    <th width="10%">Local</th>
+                    <th width="10%">Dia</th>
+                    <th colspan="2" width="20%">Cantina Penha</th>
+                    <th colspan="2" width="20%">Cantina Gambelas</th>
+                    <th colspan="2" width="20%">Cantina Portimao</th>
+                </tr>
+                <tr>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th width="10%">Professores</th>
+                    <th width="10%">Alunos</th>
+                    <th width="10%">Professores</th>
+                    <th width="10%">Alunos</th>
+                    <th width="10%">Professores</th>
+                    <th width="10%">Alunos</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in data.inscricoes %}
+                <tr>
+                    <td width="10%">{{ item.inscricaoPrato_id }}</td>
+                    <td width="10%">{{ item.nome_escola }}</td>
+                    <td width="10%">{{ item.ano_inscricao }} {{ item.turma_inscricao }}</td>
+                    <td width="10%">{{ item.local_escola }}</td>
+                    <td width="10%">{{ item.dia_inscricao }}</td>
+                    {% if item.campus == 'Penha' %}
+                    <td width="10%">{{ item.professores_pratos }}</td>
+                    <td width="10%">{{ item.alunos_pratos }}</td>
+                    <td width="10%">---</td>
+                    <td width="10%">---</td>
+                    <td width="10%">---</td>
+                    <td width="10%">---</td>
+                    {% elif item.campus == 'Gambelas' %}
+                    <td width="10%">---</td>
+                    <td width="10%">---</td>
+                    <td width="10%">{{ item.professores_pratos }}</td>
+                    <td width="10%">{{ item.alunos_pratos }}</td>
+                    <td width="10%">---</td>
+                    <td  width="10%">---</td>
+                    {% else %}
+                    <td width="10%">---</td>
+                    <td width="10%">---</td>
+                    <td width="10%">---</td>
+                    <td width="10%">---</td>
+                    <td width="10%">{{ item.professores_pratos }}</td>
+                    <td width="10%">{{ item.alunos_pratos }}</td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td colspan="5" width="50%">Total</td>
+                    <td colspan="2" width="20%">{{ data.totais.Penha.total }}</td>
+                    <td colspan="2" width="20%">{{ data.totais.Gambelas.total }}</td>
+                    <td colspan="2" width="20%">{{ data.totais.Portimao.total }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div>
+        <p>Preço alunos: {{ precoalunos }}</p>
+        <p>Preço professores: {{ precoprofessores }}</p>
+    </div>
+    {% endfor %}
+    
+</body>
+</html>

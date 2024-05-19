@@ -1,0 +1,376 @@
+{% extends 'app.html' %}
+{% load static %}
+
+{% block title %}Estatísticas{% endblock %}
+
+{% block load %}
+<link rel="stylesheet" href="{% static 'css/Chart.min.css' %}">
+{% endblock %}
+
+{% block content %}
+<style>
+   .question-title h3 {
+        background-color: #e3f2fd; 
+        padding: 15px;              
+        border-radius: 8px;        
+        font-size: 1.2em;          
+        margin-bottom: 20px;        
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+        text-align: center;         
+    }
+    .chart-container {
+    padding: 10px;  
+    margin-bottom: auto;
+    max-width: 700px; 
+    height: 500px; 
+    margin-left: auto; 
+    margin-right: auto;
+    margin-top: auto;
+}
+.buttons-container {
+    display: flex;          
+    flex-direction: column; 
+    align-items: flex-end; 
+    gap: 10px;              
+    margin-top: 20px;       
+}
+.field-container  {
+    justify-content: left; /* Alinha os campos à esquerda */
+}
+</style>
+
+<div>
+    <h2>Resultados do Questionário</h2>
+ 
+    <div>
+        <nav aria-label="breadcrumbs" class="breadcrumb">
+            <ul>
+                <li><a href="{% url 'home' %}">Início</a></li>
+                <li class="is-active"><a href="">Dados e Estatísticas</a></li>
+            </ul>
+        </nav>
+        <div class="buttons-container">
+            <button type="button" id="obterPdfButton" class="button is-danger" onclick="exportarPDF()">
+                <span class="icon is-small"><i class="mdi mdi-download"></i></span>
+                <span>Exportar Gráficos para PDF</span>
+            </button>
+            <button type="button" id="exportarCsvButton" class="button is-primary">
+                <span class="icon is-small"><i class="mdi mdi-download"></i></span>
+                <span>Exportar Dados para CSV</span>
+            </button>
+        </div>
+       
+        <div class="field-container">
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label">Roteiros</label>
+                </div>
+                <div class="field-body">
+                    <div class="field">
+                        <p class="control">
+                            <div class="select">
+                                <select id="roteiro-select">
+                                    <option value="-1" selected>------</option>
+                                    {% for roteiro in roteiros %}
+                                        <option value="{{ roteiro.id }}">{{ roteiro.nome }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+            <div class="field-container">
+                <div class="field is-horizontal">
+                    <div class="field-label is-normal">
+                        <label class="label">Atividades</label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <p class="control">
+                                <div class="select">
+                                    <select id="atividade-select">
+                                        <option value="-1" selected>Geral</option>
+                                        {% for atividade in atividades %}
+                                            <option value="{{ atividade.id }}">{{ atividade.nome }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    
+    <!-- Utilizando a estrutura de colunas e linhas do Bootstrap -->
+    <div class="row">
+        {% for resultado in resultados %}
+        <div class="question-title">
+            <h3>{{ resultado.pergunta }}</h3>
+        </div>
+        <div class="chart-container" id="chart-container-{{ forloop.counter }}">
+            <canvas id="chart-{{ forloop.counter }}" ></canvas>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/Chart.min.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"
+            integrity="sha512-JPcRR8yFa8mmCsfrw4TNte1ZvF1e3+1SdGMslZvmrzDYxS69J7J49vkFL8u6u8PlPJK+H3voElBtUCzaXj+6ig=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script
+            src="https://rawgit.com/chartjs/chartjs.github.io/master/dist/master/Chart.min.js"
+    ></script>
+    <script
+            src="https://cdn.jsdelivr.net/npm/chartjs-plugin-piechart-outlabels"
+    ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    
+<script>
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Definindo vários conjuntos de cores
+    var colorSets = [
+    ['rgba(244, 67, 54, 0.8)', 'rgba(255, 235, 59, 0.8)', 'rgba(76, 175, 80, 0.8)', 'rgba(33, 150, 243, 0.8)', 'rgba(156, 39, 176, 0.8)', 'rgba(255, 87, 34, 0.8)'],
+    ['rgba(3, 169, 244, 0.8)', 'rgba(0, 150, 136, 0.8)', 'rgba(139, 195, 74, 0.8)', 'rgba(205, 220, 57, 0.8)', 'rgba(121, 85, 72, 0.8)', 'rgba(158, 158, 158, 0.8)'],
+    ['rgba(255, 152, 0, 0.8)', 'rgba(103, 58, 183, 0.8)', 'rgba(233, 30, 99, 0.8)', 'rgba(63, 81, 181, 0.8)', 'rgba(96, 125, 139, 0.8)', 'rgba(255, 204, 188, 0.8)'],
+    ['rgba(178, 235, 242, 0.8)', 'rgba(197, 202, 233, 0.8)', 'rgba(244, 143, 177, 0.8)', 'rgba(255, 138, 101, 0.8)', 'rgba(159, 168, 218, 0.8)', 'rgba(129, 199, 132, 0.8)']
+];
+
+    {% for resultado in resultados %}
+    var ctx = document.getElementById('chart-{{ forloop.counter }}').getContext('2d');
+    var dataValues = [{% for resposta in resultado.respostas %} {{ resposta.total }}, {% endfor %}];
+    var total = dataValues.reduce((acc, val) => acc + val, 0); // Calcula o total dos valores para a base de percentagem
+    var labelsWithValues = [{% for resposta in resultado.respostas %}"{{ resposta.texto_opcao }}: {{ resposta.total }}", {% endfor %}]; // Labels com valores
+    var colorSetIndex = ({{ forloop.counter0 }} % colorSets.length); 
+    var chart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: labelsWithValues,
+            datasets: [{
+                label: '{{ resultado.pergunta }}',
+                data: dataValues,
+                backgroundColor: colorSets[colorSetIndex],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            legend: {
+                position: 'left',
+                onClick: function (e, legendItem, legend) {
+                }
+            },
+            plugins: {
+                outlabels: {
+                    text: '%p',
+                    color: 'white',
+                    stretch: 20,
+                    font: {
+                        resizable: false,
+                     
+                    },
+                },
+                
+            },
+            tooltips: {
+                enabled: true,  // Ative os tooltips
+                mode: 'index',
+                callbacks: {
+                    label: function(tooltipItem, data) {
+                        var value = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
+                        var total = data.datasets[tooltipItem.datasetIndex].data.reduce((a, b) => a + b, 0);
+                        var percentage = ((value / total) * 100).toFixed(2); // Calcula a percentagem
+                        return data.labels[tooltipItem.index] + ' (' + percentage + '%)';
+                    },
+                },
+            },
+            hover: {
+                mode: null
+            },
+            layout: {
+                padding: {
+                    left: 0,
+                    right: 30,
+                    top: 30,
+                    bottom: 30
+                }
+            },
+        },
+
+    });
+    {% endfor %}
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    var atividadeSelect = document.getElementById('atividade-select');
+    atividadeSelect.addEventListener('change', function() {
+        var selectedAtividadeId = this.value;
+        filtrarGraficos(selectedAtividadeId);
+    });
+
+    function filtrarGraficos(atividadeId) {
+        var charts = document.getElementsByClassName('chart-container');
+        Array.from(charts).forEach(chart => chart.style.display = 'none');
+
+        if (atividadeId !== "-1") {
+            // Redirecionar para outra view passando o ID da atividade como parâmetro
+            location.href = "{% url 'inscricoes:estatisticaporatividade' 12345 %}".replace(/12345/, atividadeId);
+
+        } else {
+            // Mostrar todos os gráficos ou resetar para o estado inicial
+            Array.from(charts).forEach(chart => chart.style.display = 'block');
+        }
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    var roteiroSelect = document.getElementById('roteiro-select');
+    roteiroSelect.addEventListener('change', function() {
+        var selectedRoteiroId = this.value;
+        console.log("roteiroId",selectedRoteiroId)
+        filtrarGraficosPorRoteiro(selectedRoteiroId);
+    });
+
+    function filtrarGraficosPorRoteiro(roteiroId) {
+        var charts = document.getElementsByClassName('chart-container');
+        Array.from(charts).forEach(chart => chart.style.display = 'none');
+        console.log(roteiroId)
+
+        if (roteiroId !== "-1") {
+            // Redirecionar para outra view passando o ID do roteiro como parâmetro
+            location.href = "{% url 'inscricoes:estatisticaporroteiro' 12345 %}".replace(/12345/, roteiroId);
+        } else {
+            // Mostrar todos os gráficos ou resetar para o estado inicial
+            Array.from(charts).forEach(chart => chart.style.display = 'block');
+        }
+    }
+});
+
+async function exportarPDF() {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+    });
+
+    // Carregar imagens de forma assíncrona
+    const img1 = await getImageDataURL('/static/img/logo-navbar.png');
+    const img2 = await getImageDataURL('/static/img/logo.png');
+
+    // Adicionar imagens ao PDF, ajustando tamanho e posição
+    pdf.addImage(img1, 'PNG', 10, 10, 30, 15); // Tamanho reduzido e posicionado no topo
+  
+
+    // Configurações de fonte e título
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(18);
+    pdf.setTextColor(74, 144, 226); // Azul
+
+    // Posicionamento ajustado do título para dar espaço para o logotipo
+    pdf.text("Estatísticas Gerais de Questionários Sobre Atividade/Roteiros", 105, 40, { align: 'center' });
+
+    posY = 50; // Ajusta a posição Y após o título, dando espaço para imagens e título
+
+    // Iterar sobre os resultados para adicionar gráficos
+    {% for resultado in resultados %}
+    canvas = document.getElementById('chart-{{ forloop.counter }}');
+    canvasImg = canvas.toDataURL('image/png', 1.0);
+    pdf.setFont('helvica', 'bold');
+    pdf.setFontSize(14);
+    pdf.setTextColor(100);
+
+    spaceNeeded = 15 + 80; // Espaço necessário para a pergunta e o gráfico
+    if (posY + spaceNeeded > 280) {
+        pdf.addPage();
+        posY = 20; // Reseta a posição Y para o topo da nova página
+    }
+
+    pdf.text('{{ resultado.pergunta }}', 10, posY + 15);
+    posY += 20;
+
+    pdf.setDrawColor(74, 144, 226);
+    pdf.line(10, posY + 1, 170, posY + 1);
+
+    pdf.addImage(canvasImg, 'PNG', 10, posY, 180, 80);
+    posY += 90;
+    {% endfor %}
+
+    // Rodapé
+    pdf.setTextColor(150);
+    pdf.setFontSize(10);
+    pdf.text("Ualg Dia Aberto {{diaaberto}}", 105, 287, { align: 'center' });
+
+    pdf.save('Estatistica_Questionarios_{{diaaberto}}.pdf');
+}
+
+// Função para carregar imagens como base64
+function getImageDataURL(path) {
+    return new Promise(resolve => {
+        let img = new Image();
+        img.crossOrigin = 'Anonymous'; // Use this if images are served from a different domain
+        img.onload = function() {
+            let canvas = document.createElement('canvas');
+            canvas.width = this.naturalWidth;
+            canvas.height = this.naturalHeight;
+            canvas.getContext('2d').drawImage(this, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+        };
+        img.src = path;
+    });
+}
+
+
+
+function exportarCSV() {
+    var csvContent = "data:text/csv;charset=utf-8,Pergunta;Opcao;Total\n"; // Cabeçalho do CSV
+
+    {% for resultado in resultados %}
+    var pergunta = "{{ resultado.pergunta }}".replace(/"/g, '""'); 
+    {% for resposta in resultado.respostas %}
+    var opcao = "{{ resposta.opçao_resposta__texto_opcao }}".replace(/"/g, '""'); 
+    var total = "{{ resposta.total }}";
+    csvContent += '"' + pergunta + '";"' + opcao + '";"' + total + '"\n';
+    {% endfor %}
+    {% endfor %}
+
+    var encodedUri = encodeURI(csvContent);
+    var link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "estatistica_questionario_Atividade/Roteiros_{{diaaberto}}.csv");
+    document.body.appendChild(link); 
+
+    link.click(); 
+}
+function escapeCsvValue(value) {
+    // Escapa aspas duplas e envolve o valor em aspas duplas
+    if (value.includes('"') || value.includes(',')) {
+        return '"' + value.replace(/"/g, '""') + '"';
+
+    }
+    return value;
+}
+
+
+// Vincule a função ao seu botão de exportação
+document.addEventListener('DOMContentLoaded', function() {
+    var exportCsvButton = document.getElementById('exportarCsvButton');
+    if (exportCsvButton) {
+        exportCsvButton.addEventListener('click', exportarCSV);
+    }
+});
+</script>
+
+    
+
+{% endblock %}

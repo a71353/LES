@@ -1,0 +1,431 @@
+{% extends 'app.html' %}
+{% load static %}
+{% block content %}
+
+<head>
+    <style>
+        .modal {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* para adicionar um fundo escuro transparente */
+            z-index: 1000;
+        }
+    
+        .modal-card {
+            width: 400px; /* ajuste conforme necessário */
+            background-color: white;
+            border-radius: 6px;
+        }
+
+        .tamanho-letra{
+            font-size: 18px;
+        }
+
+    </style>
+</head>
+
+<div style="padding: 1rem 2vw 0px;">
+    <hr>
+    <h2 class="title has-text-grey is-uppercase" style="font-size: 2.0rem;">
+        Consultar Questionario:
+    </h2>
+    <div class="columns">
+        <div class="column">
+            <div class="field">
+                <label class="label">Nome: </label>
+                <div class="control is-clearfix">
+                    {{nome}}
+                </div>
+                <br>
+                <label class="label">Tema: </label>
+                <div class="control is-clearfix">
+                    {{ tema_texto }}
+                </div>
+                <br>
+                <label class="label">Data de Publicação: </label>
+                <div class="control is-clearfix">
+                   {{data_publicacao}}
+                </div>
+                <br>
+                <label class="label">Data de Expiração: </label>
+                <div class="control is-clearfix">
+                   {{data_expiracao}}
+                </div>
+            </div>
+        </div>
+        <div class="column">
+            <div class="field">
+                <label class="label">Estado: </label>
+                <div class="control is-clearfix tamanho-letra">
+                    {% if estado == "pendente" %}
+                        <span style="color: green;">Disponível</span>
+                    {% elif estado == "disponivel" %}
+                        <span style="color: blue;">Validado</span>
+                    {% elif estado == "arquivado" %}
+                        <span style="color: #ffd700;">Arquivado</span>
+                    {% elif estado == "publicado" %}
+                        <span style="color: purple;">Publicado</span>
+                    {% elif estado == "indisponivel" %}
+                        <span style="color: red;">Indisponivel</span>
+                    {% else %}
+                    {{estado}}
+                    {% endif %}
+                </div>
+                <br>
+                {% if estado == "pendente" %}
+                    <div class="control is-clearfix">
+                        <a href="#" class="btn btn-success" onclick="abrirPopupValidar()" style="background-color: blue; border-color: blue;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check2" viewBox="0 0 16 16">
+                                <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0"></path>
+                            </svg>
+                            Validar
+                        </a>
+                        </div>
+                    </div>
+                {% endif %}
+                {% if estado == "disponivel" and data_expiracao > data_atual %}
+                <div class="control is-clearfix">
+                    <a href="#" class="btn btn-success" onclick="abrirPopupPublicarValidado()" style="background-color: purple; border-color: purple;">
+                        <i class="bi bi-send-check-fill" style="color: white"></i>
+                        Publicar
+                    </a>
+                </div>
+                {% endif %}
+                {% if estado == "publicado" %}
+                <div class="control is-clearfix">
+                    <a href="#" class="btn btn-success" onclick="abrirPopupDespublicarPublicado()" style="background-color: blue; border-color: blue;">
+                        <i class="bi bi-send-check-fill" style="color: white"></i>
+                        Despublicar
+                    </a>
+                </div>
+                {% endif %}
+                {% if estado == "indisponivel" %}
+                    <div class="control is-clearfix">
+                        <a href="#" class="btn btn-success" onclick="abrirPopupReverter()" style="background-color: #48C774; border-color: #48C774;">
+                            <i class="bi bi-reply-fill" style="color: white"></i>
+                            Reverter Alteração
+                        </a>
+                    </div>
+                {% endif %}
+                <!--{% if estado == "indisponivel" %}
+                <div class="control is-clearfix">
+                    <a href="#" class="btn btn-success" onclick="abrirPopupValidarIndisponivel()" style="background-color: blue; border-color: blue;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check2" viewBox="0 0 16 16">
+                            <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0"></path>
+                        </svg>
+                        Validar
+                    </a>
+                </div>
+                {% endif %}
+                {% if estado == "publicado" %}
+                    <div class="control is-clearfix">
+                        <a href="#" class="btn btn-success" onclick="abrirPopupArquivarPublicado()" style="background-color: #ffd700; border-color: #ffd700;">
+                            <i class="bi bi-archive-fill" style="color: white"></i>
+                            Arquivar
+                        </a>
+                    </div>
+                {% endif %}
+                {% if estado == "arquivado" %}
+                    <div class="control is-clearfix">
+                        <a href="#" class="btn btn-success" onclick="abrirPopupPublicarArquivado()" style="background-color: purple; border-color: purple;">
+                            <i class="bi bi-send-check-fill" style="color: white"></i>
+                            Publicar
+                        </a>
+                    </div>
+                {% endif %}-->
+            </div>
+        </div>
+    </div>
+</div> 
+
+<table class="table is-fullwidth">
+    <thead>
+        <tr>
+            <th></th>
+            <th>Pergunta</th>
+            <th>Tema</th>
+            <th>Tipo de Pergunta</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for pergunta in perguntas %}
+        <tr>
+            <td class="chevron-cell">
+            {% if pergunta.tipo_resposta == "multipla_escolha" %}
+                <button class="btn btn-custom show-options-btn" data-toggle="collapse" data-target="#opcoes{{ forloop.counter }}"><span class="icon"><i class="mdi mdi-chevron-right mdi-24px"></i></span></button>
+            {% endif %}
+            </td>
+            <td data-label="Nome">{{pergunta.texto}}
+                {{opcoes}}
+            </td>
+            <td data-label="Nome">{{pergunta.tema}}
+            </td>
+            <td data-label="Tipo de Pergunta">
+                {%if pergunta.tipo_resposta == 'multipla_escolha'%}
+                    Multipla Escolha
+                {% elif pergunta.tipo_resposta == 'texto_livre' %}
+                    Texto Livre
+                {% else %}
+                    Inteiro
+                {%endif%}
+            </td>
+        </tr>
+        
+        <tr class="opcoes-row" {% if pergunta.tipo_resposta == "multipla_escolha" %} style="background-color: #FAFAFA;" {% endif %}>
+            <td colspan="4">
+                <div id="opcoes{{ forloop.counter }}" class="collapse opcoes-collapse">
+                    <table class="table is-fullwidth">
+                        <thead>
+                            <tr>
+                                <th>Nº de Opção</th>
+                                <th>Opção</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for opcao in pergunta.opcoes %}
+                                {% if forloop.counter|divisibleby:2 %}
+                                    <tr style="background-color: #FFFFFF;">
+                                {% else %}
+                                    <tr style="background-color: #FAFAFA;">
+                                {% endif %}
+                                        <td>Opção {{ forloop.counter }}:</td>
+                                        <td>{{ opcao.texto_opcao }}</td>
+                                    </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<!-- Adicione estas linhas para incluir a biblioteca do Bootstrap -->
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+
+<script>
+
+    function abrirPopupValidar() {
+        Swal.fire({
+            title: '<div style="display: block;"><i class="bi bi-check2" style="color: blue; margin-bottom: 10px; font-size: 5rem;"></i></div> Tem certeza que deseja Validar o questionário?',
+            //icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: 'blue',
+            cancelButtonColor: 'red',
+            confirmButtonText: 'Validar',
+            cancelButtonText: 'Rejeitar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                validarQuestionario()//valida
+            } else{
+                rejeitarQuestionario()//rejeita
+            }
+        });
+    }
+
+    function abrirPopupValidarIndisponivel() {
+        Swal.fire({
+            title: '<div style="display: block;"><i class="bi bi-check2" style="color: blue; margin-bottom: 10px; font-size: 5rem;"></i></div> Tem certeza que deseja Validar o questionário?',
+            showCancelButton: true,
+            confirmButtonColor: 'blue',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Validar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                validarQuestionario()//valida
+            }
+        });
+    }
+
+    function abrirPopupArquivarPublicado() {
+        Swal.fire({
+            title: '<div style="display: block;"><i class="bi bi-archive-fill" style="color: #ffd700; margin-bottom: 10px; font-size: 5rem;"></i></div> Tem certeza que deseja Arquivar o questionário?',
+            showCancelButton: true,
+            confirmButtonColor: '#ffd700',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Arquivar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                arquivarQuestionario()//arquiva
+            }
+        });
+    }
+
+    function abrirPopupPublicarArquivado() {
+        Swal.fire({
+            title: '<div style="display: block;"><i class="bi bi-send-check-fill" style="color: purple; margin-bottom: 10px; font-size: 5rem;"></i></div> Tem certeza que deseja Publicar o questionário?',
+            showCancelButton: true,
+            confirmButtonColor: 'purple',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Publicar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                publicarQuestionario()//arquiva
+            }
+        });
+    }
+
+    function abrirPopupPublicarValidado() {
+        Swal.fire({
+            title: '<div style="display: block;"><i class="bi bi-send-check-fill" style="color: purple; margin-bottom: 10px; font-size: 5rem;"></i></div> Tem certeza que deseja Publicar o questionário?',
+            showCancelButton: true,
+            confirmButtonColor: 'purple',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Publicar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                publicarQuestionario()//arquiva
+            }
+        });
+    }
+
+    function abrirPopupDespublicarPublicado() {
+        Swal.fire({
+            title: '<div style="display: block;"><i class="bi bi-send-check-fill" style="color: blue; margin-bottom: 10px; font-size: 5rem;"></i></div> Tem certeza que deseja Despublicar o questionário?',
+            showCancelButton: true,
+            confirmButtonColor: 'blue',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Despublicar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                despublicarQuestionario()//arquiva
+            }
+        });
+    }
+
+
+    function abrirPopup() {
+        document.getElementById("popup").style.display = "block";
+    }
+
+    function fecharPopup() {
+        document.getElementById("popup").style.display = "none";
+    }
+
+    function validarQuestionario() {
+        // Adicione a URL desejada para validar o questionário
+        window.location.href = "{% url 'questionarios:validarQuestionario' id %}";
+        fecharPopup(); // Opcional: fechar o popup após a ação
+    }
+
+    function rejeitarQuestionario() {
+        // Primeiro, pedir o motivo da rejeição com um input de texto
+        Swal.fire({
+            title: 'Motivo da Rejeição',
+            input: 'textarea',
+            inputLabel: 'Por favor, informe o motivo pelo qual o questionário está sendo rejeitado:',
+            inputPlaceholder: 'Digite o motivo aqui...',
+            inputAttributes: {
+                'aria-label': 'Digite o motivo aqui'
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Enviar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: 'red',
+            cancelButtonColor: '#6c757d',
+        }).then((result) => {
+            if (result.isConfirmed && result.value) {
+                // Enviar o motivo para o servidor
+                fetch('{% url "questionarios:enviarMotivoRejeicao" id %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ motivo: result.value })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Motivo enviado:', data);
+                    fecharPopup();
+                })
+                .catch(error => {
+                    console.error('Erro ao enviar motivo:', error);
+                });
+    
+                // Redirecionar para a ação de rejeição (opcional, depende do seu fluxo)
+                window.location.href = "{% url 'questionarios:rejeitarQuestionario' id %}";
+            }
+        });
+    }
+    
+    function abrirPopupReverter() { //novo
+        Swal.fire({
+            title: 'Motivo da Reversão',
+            input: 'textarea',
+            inputLabel: 'Por favor, informe o motivo pelo qual o questionário está sendo revertido para pendente:',
+            inputPlaceholder: 'Digite o motivo aqui...',
+            inputAttributes: {
+                'aria-label': 'Digite o motivo aqui'
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Enviar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#48C774',
+            cancelButtonColor: '#6c757d',
+        }).then((result) => {
+            if (result.isConfirmed && result.value) {
+                // Enviar o motivo para o servidor
+                fetch('{% url "questionarios:reverterIndisponivel" id %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ motivo: result.value })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Motivo enviado:', data);
+                })
+                .catch(error => {
+                    console.error('Erro ao enviar motivo:', error);
+                });
+    
+                // Redirecionar imediatamente após o envio do motivo
+                window.location.href = "{% url 'questionarios:lista_questionarios' %}";
+            }
+        });
+    }
+    
+    
+    /*function rejeitarQuestionario() {
+        // Adicione a URL desejada para rejeitar o questionário
+        window.location.href = "{% url 'questionarios:rejeitarQuestionario' id %}";
+        fecharPopup(); // Opcional: fechar o popup após a ação
+    }*/
+
+
+    function arquivarQuestionario() {
+        // Adicione a URL desejada para rejeitar o questionário
+        window.location.href = "{% url 'questionarios:arquivarQuestionario' id %}";
+        fecharPopup(); // Opcional: fechar o popup após a ação
+    }
+
+    function publicarQuestionario() {
+        // Adicione a URL desejada para rejeitar o questionário
+        window.location.href = "{% url 'questionarios:publicarQuestionario' id %}";
+        fecharPopup(); // Opcional: fechar o popup após a ação
+    }
+
+    function despublicarQuestionario() {
+        // Adicione a URL desejada para rejeitar o questionário
+        window.location.href = "{% url 'questionarios:despublicarQuestionario' id %}";
+        fecharPopup(); // Opcional: fechar o popup após a ação
+    }
+
+</script>
+
+{% endblock content %}

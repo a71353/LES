@@ -1,0 +1,102 @@
+{% extends 'app.html' %}
+{% load static %}
+{% block content %}
+
+<div style="padding: 1rem 2vw 0px;">
+  <hr style="color: transparent;">
+  
+  <h2 class="title has-text-grey is-uppercase" style="font-size: 2.0rem;">
+    Responder ao Questionário: <span style="color: black;">{{ questionario.nome }}</span>
+  </h2>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <article class="message is-danger">
+        <div class="message-body">
+          <p style="text-align: center;">
+          {% for error in form.non_field_errors %}
+            <strong>{{ error|escape }}</strong>
+          {% endfor %}
+          </p>
+        </div>
+      </article>
+    {% endif %}
+    
+    <div class="b-steps">
+      {% for tema, perguntas in perguntas_por_tema.items %}
+        <section class="step-content">
+          <h4 class="title has-text-weight-semibold" style="margin-top: 20px;">Tema: {{ tema }}</h4>
+          {% for pergunta, atividade in perguntas %}
+            <div class="step-item">
+              <div class="columns">
+                <div class="column">
+                  <div class="field">
+                    <label class="label">{{ forloop.parentloop.counter }}.{{ forloop.counter }}: {{ pergunta.texto }}</label>
+                    {% if atividade %}
+                      <p>Atividade Relacionada: {{ atividade.nome }}</p>
+                    {% endif %}
+                    {% if pergunta.tipo_resposta == 'texto_livre' %}
+                      <textarea class="input" name="respostas[{{ pergunta.id }}_{{ atividade.id|default_if_none:'' }}]" rows="4" cols="50" required></textarea>
+                    {% elif pergunta.tipo_resposta == 'multipla_escolha' %}
+                      <div id="radio-group-{{ pergunta.id }}-{{ atividade.id|default_if_none:'0' }}" class="button-group">
+                        {% for opcao in pergunta.opcoes.all %}
+                          <div style="margin-bottom: 5px;">
+                            <input type="radio" id="option-{{ opcao.id }}-{{ atividade.id|default_if_none:'0' }}" name="respostas[{{ pergunta.id }}_{{ atividade.id|default_if_none:'0' }}]" value="{{ opcao.id }}" required onchange="updateButtonAppearance(this)">
+                            <label for="option-{{ opcao.id }}-{{ atividade.id|default_if_none:'0' }}" style="cursor: pointer; display: block; padding: 8px 20px; background-color: #ccc; border-radius: 5px; width: auto; max-width: 200px;">
+                              Opção{{ forloop.counter }}: {{ opcao.texto_opcao }}
+                            </label>
+                          </div>
+                        {% endfor %}
+                      </div>
+                    {% elif pergunta.tipo_resposta == 'inteiro' %}
+                      <input type="number" class="input" name="respostas[{{ pergunta.id }}_{{ atividade.id|default_if_none:'0' }}]" required>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <hr>
+          {% endfor %}
+        </section>
+      {% endfor %}
+
+      <div class="column is-8 is-offset-2">
+        <div class="level">
+          <div class="level-left">
+            <a class="button is-large is-outlined" type="button" href="{% url 'home' %}">
+              <span>Cancelar</span>
+            </a>
+          </div>
+          <div class="level-right">
+            <button class="button is-large is-success is-outlined is-link" type="submit">
+              <span>Submeter</span>
+              <span class="icon is-medium">
+                <i class="mdi mdi-check mdi-36px"></i>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock content %}
+{% block scripts %}
+<script>
+  function updateButtonAppearance(radio) {
+    var labels = document.querySelectorAll('#radio-group-' + radio.name.replace('respostas[', '').replace(']', '') + ' label');
+    labels.forEach(function(label) {
+      label.style.backgroundColor = '#ccc'; // Default background color
+      label.style.color = '#000'; // Default text color
+      label.style.border = '1px solid transparent'; // Remove visible border
+    });
+    var selectedLabel = document.querySelector('label[for="' + radio.id + '"]');
+    if (selectedLabel) {
+      selectedLabel.style.backgroundColor = '#2574D2'; // Background color when selected
+      selectedLabel.style.color = 'white'; // Text color when selected
+      selectedLabel.style.border = '1px solid #007bff'; // Border color when selected
+    }
+  }
+</script>
+{% endblock scripts %}

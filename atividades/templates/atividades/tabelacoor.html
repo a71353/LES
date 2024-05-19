@@ -1,0 +1,189 @@
+{% extends 'bulma_table_details.html' %}
+{% load atividadestags %}
+
+{% block details_content %}
+{% if row.record.roteiro %}
+        <!-- Mostra informações do Roteiro associado -->
+        <table class="table has-mobile-cards is-fullwidth">
+            <tbody>
+                <tr style="border-bottom: 1px solid #ddd">
+                    <th class="th-wrap">Nome do Roteiro:</th>
+                    <td data-label='Nome do Roteiro:' style="font-weight: normal;">
+                        <span>{{ row.record.roteiro.nome }}</span>
+                    </td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd">
+                    <th class="th-wrap">Descrição do Roteiro:</th>
+                    <td colspan="4">
+                        <textarea class="textarea" disabled style="resize: none;">{{row.record.roteiro.descricao}}</textarea>
+                    </td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd">
+                    <th class="th-wrap">Público Alvo do Roteiro:</th>
+                    <td data-label="Público Alvo do Roteiro:" style="font-weight: normal;">
+                        <span>{{ row.record.roteiro.publicoalvo }}</span>
+                    </td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd">
+                    <th class="th-wrap">Duração Esperada:</th>
+                    <td data-label="Duração Esperada:" style="font-weight: normal;">
+                        <span>{{ row.record.roteiro.duracaoesperada }} minutos</span>
+                    </td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd">
+                    <th class="th-wrap">Participantes Máximo:</th>
+                    <td data-label="Participantes Máximo:" style="font-weight: normal;">
+                        <span>{{ row.record.roteiro.participantesmaximo }}</span>
+                    </td>
+                </tr>
+
+            </tbody>
+        </table>
+
+                <h3>Atividades Associadas:</h3>
+        <table class="table has-mobile-cards is-fullwidth">
+            <thead>
+                <tr>
+                    <th>Nome da Atividade</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for atividade in row.record.roteiro.atividade_set.all %}
+                <tr>
+                    <td>{{ atividade.nome }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <!-- Dados das sessões ainda podem ser mostrados, se relevante -->
+    <p><strong>Dados das sessões:</strong></p>
+    <br>
+    <table class="table has-mobile-cards is-fullwidth">
+        <thead>
+            <tr>
+                <th><div class="th-wrap">Dia</div></th>
+                <th><div class="th-wrap" style="width:150px">Hora</div></th>
+            
+            </tr>
+        </thead>
+        <tbody>
+            {% for sessao in row.record.roteiro.sessao_set.all %}
+            <tr>
+                <td data-label="Dia">{{ sessao.dia }}</td>
+                <td data-label="Hora">{{ sessao.horarioid.inicio }} até {{ sessao.horarioid.fim }}</td>
+                
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+
+<table class="table has-mobile-cards is-fullwidth">
+    <tbody>
+        <tr style="border-bottom: 1px solid #ddd">
+            <th class="th-wrap">Data da ultima alteração:</th>
+            <td  style="font-weight: normal;">
+                <span>{{row.record.dataalteracao}}</span>
+            </td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ddd">
+            <th class="th-wrap">Local:</th>
+            <td style="font-weight: normal;">
+                <span>{{row.record.espacoid.edificio.campus.nome}} - {{row.record.espacoid.edificio}} - {{row.record.espacoid}}</span>
+            </td>           
+        </tr>
+        <tr style="border-bottom: 1px solid #ddd">
+            <th class="th-wrap">Tema:</th>
+            <td  style="font-weight: normal;">
+                <span>{{row.record.get_tema}}</span>
+            </td>           
+        </tr>
+        <tr style="border-bottom: 1px solid #ddd">
+            <th class="th-wrap">Publico Alvo:</th>
+            <td style="font-weight: normal;">
+                <span>{{row.record.publicoalvo}}</span>
+            </td>           
+        </tr>
+        <tr style="border-bottom: 1px solid #ddd">
+            <th class="th-wrap">Departamento:</th>
+            <td style="font-weight: normal;">
+                <span>{{row.record.professoruniversitarioutilizadorid.departamento.nome}}</span>
+            </td>           
+        </tr>
+        <tr style="border-bottom: 1px solid #ddd">
+            <th class="th-wrap">Numero de Colaboradores:</th>
+            <td style="font-weight: normal;">
+                <span>{{row.record.nrcolaboradoresnecessario}}</span>
+            </td>           
+        </tr>
+        <tr style="border-bottom: 1px solid #ddd">
+            <th class="th-wrap">Materiais Necessarios:</th>
+            <td style="font-weight: normal;">
+                <span>{{row.record.get_material.nomematerial|material_none}}</span>
+            </td>           
+        </tr>
+        <tr style="border-bottom: 1px solid #ddd">
+            <th class="th-wrap">Descrição:</th>
+            <td></td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ddd">
+            <td colspan="4">
+                <textarea class="textarea" disabled style="resize: none;">{{row.record.descricao}}</textarea>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<p>
+    <strong>Dados das sessões:</strong>
+</p>
+<br>
+<table class="table has-mobile-cards is-fullwidth">
+        <thead>
+            <tr>
+                <th><div class="th-wrap">Dia</div></th>
+                <th><div class="th-wrap" style="width:150px">Hora</div></th>
+                <th><div class="th-wrap" style="width:150px">inscritos</div></th>
+                {% if row.record.estado == "Pendente" %}
+                <th><div class="th-wrap" style="width:200px">Conflitos com a Atividade</div></th>
+                {% endif %}
+                {% if row.record.estado == "Aceite" and row.record.nrcolaboradoresnecessario > 0 %}
+                <th><div class="th-wrap" style="width:200px">Colaboradores </div></th>
+                {% endif %}
+            </tr>
+        </thead>
+        {% for  sessao in  row.record.sessao_set.all%}
+            <tbody>
+                <tr >
+                    <td data-label="Dia">{{sessao.dia}}</td>
+                    <td data-label="Hora">{{sessao.horarioid.inicio}} até {{sessao.horarioid.fim}}</td>
+                    <td data-label="inscritos">{{sessao|inscritos}}/{{row.record.participantesmaximo}}</td>
+                    {% if row.record.estado == "Pendente" %}
+                        <td>
+                            <p class="has-text-danger">
+                            {% for conf in table.conflitos %}
+                                {% if sessao.id == conf.atividade1.id  %}
+                                    {{conf.atividade2.atividadeid.nome}} ({{conf.atividade2.horarioid.inicio}}- {{conf.atividade2.horarioid.fim}}) , 
+                                {% endif %}
+                            {% endfor %}
+                            </p>
+                        </td>
+                    {% endif %}
+                    {% if row.record.estado == "Aceite" and row.record.nrcolaboradoresnecessario > 0 %}
+                    <td data-label="Colaborador">
+                        {{sessao.get_colaboradores|colab_list}}
+                    </td> 
+                    {% endif %}
+                    </tr>
+                </tbody>
+        {% endfor %}
+    </table>
+{%endif%}
+
+    {% if  row.record.estado == 'Pendente' %}
+        <div style="margin-top:13px">
+            <a type="button" onclick="alert.render('Deseja aceitar esta Atividade?','{% url 'atividades:validarAtividade' row.record.id 1 %}')"  class="validatebutton button is-success" style="margin-right: 10px;" ><span class="icon is-small"><i class="mdi mdi-check"></i></span><span>Aceitar</span></a>
+            <a type="button" onclick="alert.render('Deseja rejeitar esta Atividade?','{% url 'atividades:validarAtividade' row.record.id 0 %}')" class="validatebutton button is-danger"><span class="icon is-small"><i class="mdi mdi-delete"></i></span> <span>Rejeitar</span></a>
+            
+        </div>
+    {% endif %}
+{% endblock details_content %}

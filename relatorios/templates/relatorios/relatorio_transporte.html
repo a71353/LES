@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+{% load static %}
+{% load inscricoes_extras %}
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscrição no Dia Aberto {{ano}} - Universidade do Algarve</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+
+            @frame footer_frame {
+                /* Static frame */
+                -pdf-frame-content: footer_content;
+                left: 50pt;
+                width: 512pt;
+                top: 772pt;
+                height: 20pt;
+            }
+        }
+
+        .section-header {
+            text-align: center;
+            padding: 3px;
+            padding-top: 10px;
+            background-color: #eee;
+            border: 1px solid #000;
+            font-weight: bold;
+        }
+
+        .responsaveis-table {
+            width: 100%;
+            max-width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .responsaveis-table td {
+            padding: 3px;
+            padding-top: 2px;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-bottom: 1px solid #000;
+            text-align: center;
+        }
+
+        .responsaveis-table thead th {
+            padding-left: 6px;
+            padding-top: 4px;
+            vertical-align: bottom;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-top: 1px solid #000;
+            text-align: left;
+        }
+
+        .inscricao-table {
+            width: 100%;
+            max-width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .inscricao-table td {
+            padding: 3px;
+            padding-top: 6px;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-bottom: 1px solid #000;
+            text-align: center;
+        }
+
+        .inscricao-table thead th {
+            padding-top: 4px;
+            vertical-align: bottom;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-top: 1px solid #000;
+            background-color: #eee
+        }
+
+        .escola-table {
+            width: 100%;
+            max-width: 100%;
+            {% if inscricao.individual %}margin-bottom: 15px;{% endif %}
+        }
+
+        .escola-table td {
+            padding: 3px;
+            padding-top: 6px;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-bottom: 1px solid #000;
+            text-align: center;
+        }
+
+        .escola-table thead th {
+            padding-top: 4px;
+            vertical-align: bottom;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-top: 1px solid #000;
+            background-color: #eee
+        }
+
+        .turma-table {
+            width: 100%;
+            max-width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .turma-table td {
+            padding: 3px;
+            padding-top: 6px;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-bottom: 1px solid #000;
+            text-align: center;
+        }
+
+        .turma-table thead th {
+            padding-top: 4px;
+            vertical-align: bottom;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-top: 1px solid #000;
+            background-color: #eee
+        }
+
+        .sessoes-table {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .sessoes-table th,
+        .sessoes-table td {
+            padding: 3px;
+            padding-top: 6px;
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            text-align: center;
+        }
+
+        .sessoes-table thead th {
+            vertical-align: bottom;
+            border-bottom: 1.2px solid #000;
+            background-color: #eee
+        }
+
+        .has-text-centered {
+            text-align: center;
+        }
+
+        .page-break {
+            page-break-after: always; /* Quebra de página após o elemento */
+        }
+
+        .page-break-last {
+            page-break-after: avoid; /* Evita quebra de página após o elemento */
+        }
+
+        .last-page-break {
+            page-break-before: always; /* Força uma quebra de página antes do elemento */
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .page-header img {
+            height: 100px;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div id="footer_content">Dia Aberto da UAlg {{ano}} - página
+        <pdf:pagenumber> de <pdf:pagecount>
+    </div>
+    
+    {% for dia, transportes in transportes_inscricoes.items %}
+    <div class="{{ forloop.last|yesno:'page-break-last,page-break' }}">
+        <div class="page-header">
+            <img src="{{ logo_url }}" alt="UAlg Logo">
+            <img src="{{ logo_url2 }}" alt="Dia Aberto Logo">
+            <h1>Dia Aberto {{ ano }} - Universidade do Algarve</h1>
+            <pdf:spacer height="20px" />
+
+
+    <!-- TABELA TRANSPORTE -->
+    <div class="section-header">RELATÓRIO SOBRE TRANSPORTE</div>
+    <hr>
+        </div>
+        <h2>Dia: {{ dia }}</h2>
+        <table class="turma-table">
+            <thead>
+                <tr>
+                    <th><strong>ID da inscrição</strong></th>
+                    <th><strong>Meios de transporte</strong></th>
+                    <th><strong>Número de passageiros</strong></th>
+                    <th><strong>Capacidade do meio de transporte</strong></th>
+                    <th><strong>Escola</strong></th>
+                    <th><strong>Turma</strong></th>
+                    <th><strong>Hora de partida</strong></th>
+                    <th><strong>Hora de chegada</strong></th>
+                    <th><strong>Local de partida</strong></th>
+                    <th><strong>Local de chegada</strong></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transporte in transportes %}
+                <tr>
+                    <td>{{ transporte.inscricao_id }}</td>
+                    <td>{{ transporte.meio_transporte }}</td>
+                    <td>{{ transporte.npassageiros }}</td>
+                    <td>{{ transporte.capacidade }}</td>
+                    <td>{{ transporte.escola_nome }}</td>
+                    <td>{{ transporte.ano_inscricao }}º {{ transporte.turma_inscricao }}</td>
+                    <td>{{ transporte.hora_partida|time:"H:i" }}</td>
+                    <td>{{ transporte.hora_chegada|time:"H:i" }}</td>
+                    <td>{{ transporte.origem }}</td>
+                    <td>{{ transporte.chegada }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endfor %}
+
+
+<div class="last-page-break">
+    <div class="page-header">
+        <img src="{{ logo_url }}" alt="UAlg Logo">
+        <img src="{{ logo_url2 }}" alt="Dia Aberto Logo">
+        <h1>Dia Aberto {{ ano }} - Universidade do Algarve</h1>
+    </div>
+    <h2>Resumo de Todos os Transportes</h2>
+    <table class="turma-table">
+        <thead>
+            <tr>
+                <th><strong>Dia</strong></th>
+                <th><strong>ID da inscrição</strong></th>
+                <th><strong>Meios de transporte</strong></th>
+                <th><strong>Número de passageiros</strong></th>
+                <th><strong>Capacidade do meio de transporte</strong></th>
+                <th><strong>Escola</strong></th>
+                <th><strong>Turma</strong></th>
+                <th><strong>Hora de partida</strong></th>
+                <th><strong>Hora de chegada</strong></th>
+                <th><strong>Local de partida</strong></th>
+                <th><strong>Local de chegada</strong></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dia, transportes in transportes_inscricoes.items %}
+                {% for transporte in transportes %}
+                <tr>
+                    <td>{{ dia }}</td>
+                    <td>{{ transporte.inscricao_id }}</td>
+                    <td>{{ transporte.meio_transporte }}</td>
+                    <td>{{ transporte.npassageiros }}</td>
+                    <td>{{ transporte.capacidade }}</td>
+                    <td>{{ transporte.escola_nome }}</td>
+                    <td>{{ transporte.ano_inscricao }}º {{ transporte.turma_inscricao }}</td>
+                    <td>{{ transporte.hora_partida|time:"H:i" }}</td>
+                    <td>{{ transporte.hora_chegada|time:"H:i" }}</td>
+                    <td>{{ transporte.origem }}</td>
+                    <td>{{ transporte.chegada }}</td>
+                </tr>
+                {% endfor %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+</html>

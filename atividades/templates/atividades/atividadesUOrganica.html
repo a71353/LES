@@ -1,0 +1,208 @@
+{% extends 'app.html' %}
+{% block content %}
+{% load django_tables2 %}
+<div class="columns">
+       <div class="column is-3">
+ <form method="get">
+            <div class="menu">
+                <p class="menu-label">Filtros Atividades/Roteiros</p>
+                <ul class="menu-list">
+                    <div class="field">
+                        <div class="control has-icons-left">
+                            <div class="select is-fullwidth">
+                                <select name="{{ filter.form.departamento_id.name }}"
+                                    value="{{filter.form.departamento_id.value}}">
+                                    <option value="">Qualquer Departamento</option>
+                                    {% for value, dep in deps %}
+                                        {% if value != "" %}    
+                                        <option value="{{ value }}"
+                                            {% if value|stringformat:'s' == filter.form.departamento_id.value %} selected
+                                            {% endif %}>
+                                            {{ dep }}
+                                        </option>
+                                    {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <span class="icon is-left">
+                                <i class="mdi mdi-magnify mdi-24px"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="control has-icons-left">
+                            <div class="select is-fullwidth">
+                                <select name="{{ filter.form.tipo.name }}"
+                                    value="{{filter.form.tipo.value}}">
+                                    <option value="" >Qualquer Tipo</option>
+                                    <option value="Tertulia" {% if filter.form.tipo.value == 'Tertulia' %}selected{% endif %}>Tertulia</option>
+                                    <option value="Palestra" {% if filter.form.tipo.value == 'Palestra' %}selected{% endif %}>Palestra</option>
+                                    <option value="Atividade Laboratorial" {% if filter.form.tipo.value == 'Atividade Laboratorial' %}selected{% endif %}>Atividade Laboratorial</option>
+                                </select>
+                            </div>
+                            
+                            <span class="icon is-left">
+                                <i class="mdi mdi-magnify mdi-24px"></i>
+                            </span>
+                            
+                        </div>
+                    </div>
+                
+                    <div class="field">
+                        <!---->
+                        <div class="control has-icons-left is-clearfix">
+                            <input class='input' id='id_nome' type='text' name='nome' value="{{filter.form.nome.value|default_if_none:''}}" placeholder="Nome">
+                            <span class="icon is-left">
+                                <i class="mdi mdi-magnify mdi-24px"></i>
+                            </span>
+                        </div>
+                        <!---->
+                    </div>
+                    <div class="field">
+                        <label>Estado:</label>
+                    </div>
+                    <li>
+                        {{filter.form.estado}}
+                    </li>
+                </ul>
+
+                <div class="field">
+                    <div class="control has-icons-left">
+                        <div class="select is-fullwidth">
+                            <!-- Mudança aqui: Usar o nome correto do campo do formulário, que é 'roteiro' -->
+                            <select name="{{ filter.form.roteiro.name }}">
+                                <option value="">Qualquer Roteiro</option>
+                                {% for roteiro in roteiros %}
+                                <!-- Ajuste para verificar se o valor atualmente selecionado corresponde ao valor no loop -->
+                                <option value="{{ roteiro.id }}" {% if filter.form.roteiro.value|stringformat:'s' == roteiro.id|stringformat:'s' %} selected {% endif %}>
+                                    {{ roteiro.nome }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <span class="icon is-left">
+                            <i class="mdi mdi-magnify mdi-24px"></i>
+                        </span>
+                    </div>
+                </div>
+                <div class='field is-grouped' style='margin-top: 5px'>
+                        <p class="control is-expanded">
+                            <a type="button" role="button" href="{% url 'atividades:atividadesUOrganica' %}" class="button is-light is-fullwidth">Limpar</a>
+                        </p>
+                        <p class="control is-expanded">
+                            <button class="button is-primary is-fullwidth" type="submit">
+                                <span class="icon">
+                                    <i class="mdi mdi-magnify"></i>
+                                </span>
+                                <span>Pesquisar</span>
+                            </button>
+                        </p>
+                </div>
+                
+
+            </div>     
+        </form>
+    </div>
+    
+    <div class="column">
+        <nav class="breadcrumb" aria-label="breadcrumbs">
+            <ul>
+              <li><a href="#">Início</a></li>
+              <li class="is-active"><a href="#" aria-current="page">Atividades</a></li>
+            </ul>
+          </nav>
+          <a href="{% url 'roteiros:proporRoteiro' %}" class="button is-success is-outlined" type="button" style="margin-bottom:0.5rem">
+            <span class="icon is-small">
+                <i class="mdi mdi-plus"></i>
+            </span>
+            <span>Criar novo Roteiro</span>
+        </a>
+        <a href="{% url 'roteiros:verTodosRelatorios' %}" class="button is-primary " type="button" style="margin-bottom:0.5rem">
+            <span class="icon is-small">
+                <i class="fa-solid fa-file-pdf" style="color: #c93217; font-size: 20px;"></i>
+            </span>
+            <span>Exportar Atividades/Roteiros</span>
+        </a>
+        {% render_table table 'atividades/tabelacoor.html' %}
+    </div>
+    
+   
+
+
+
+<style>
+.dialog .modal-card .modal-card-body.is-titleless {
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+}
+
+tr.detail{
+    padding:1rem;
+}
+.table tr.detail{
+    -webkit-box-shadow:inset 0 1px 3px #dbdbdb;
+    box-shadow:inset 0 1px 3px #dbdbdb;
+    background:#fafafa
+}
+
+
+
+    
+    .dialog .modal-card .modal-card-body.is-titleless {
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+    }
+    
+    tr.detail{
+        padding:1rem;
+    }
+    .table tr.detail{
+        -webkit-box-shadow:inset 0 1px 3px #dbdbdb;
+        box-shadow:inset 0 1px 3px #dbdbdb;
+        background:#fafafa
+    }
+    .gg-duplicate {
+     box-sizing: border-box;
+     position: relative;
+     display: block;
+     transform: scale(var(--ggs,1));
+     width: 10px;
+     height: 10px;
+     border: 2px solid transparent;
+     border-bottom: 4px solid transparent;
+     box-shadow: 0 0 0 2px,inset 0 -2px 0 0;
+     margin-left: 2px;
+     margin-top: 1px
+    }
+    
+    .gg-duplicate::after,
+    .gg-duplicate::before {
+     content: "";
+     display: block;
+     box-sizing: border-box;
+     position: absolute
+    }
+    
+    .gg-duplicate::before {
+     background: currentColor;
+     left: 2px;
+     bottom: -2px;
+     width: 2px;
+     height: 6px
+    }
+    
+    .gg-duplicate::after {
+     width: 14px;
+     height: 14px;
+     border-right: 2px solid;
+     border-top: 2px solid;
+     right: -8px;
+     top: -8px
+    } 
+</style>
+    <script>
+        <link href='https://unpkg.com/css.gg@2.0.0/icons/css/duplicate.css' rel='stylesheet'></link>
+    </script>
+{% endblock content %}
+{% block scripts%}
+{% endblock scripts%}

@@ -1,0 +1,84 @@
+{% extends 'app.html' %}
+{% block content %}
+{% load l10n %}
+{% load django_tables2 %}
+<div class="columns">
+    <div class="column is-3">
+        <form method="get">
+            <div class="menu">
+                <p class="menu-label">Filtros de Questionário</p>
+                <ul class="menu-list">
+
+                    <!-- Filtro Nome do Questionário -->
+                    <div class="field">
+                        <label for="id_nome" class="label">Nome do Questionário</label>
+                        <div class="control has-icons-left">
+                            <input class="input" id="id_nome" type="text" name="nome" value="{{ filter.form.nome.value|default_if_none:'' }}" placeholder="Nome do Questionário">
+                            <span class="icon is-left">
+                                <i class="mdi mdi-file-document-outline"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Filtro Estado do Questionário -->
+                    <div class="field">
+                        <label for="id_estado" class="label">Estado do Questionário</label>
+                        <div class="control has-icons-left">
+                            <div class="select is-fullwidth">
+                                <select id="id_estado" name="estado">
+                                    <option value="">Selecione um Estado</option>
+                                    <option value="dis" {% if filter.form.estado.value == 'dis' %} selected {% endif %}>Disponível</option>
+                                    <option value="ind" {% if filter.form.estado.value == 'ind' %} selected {% endif %}>Indisponível</option>
+                                    <option value="arq" {% if filter.form.estado.value == 'arq' %} selected {% endif %}>Arquivado</option>
+                                    <option value="pen" {% if filter.form.estado.value == 'pen' %} selected {% endif %}>Pendente</option>
+                                    <option value="pUB" {% if filter.form.estado.value == 'pub' %} selected {% endif %}>Publicado</option>
+                                </select>
+                            </div>
+                            <span class="icon is-left">
+                                <i class="mdi mdi-checkbox-marked-circle-outline"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                </ul>
+                <div class='field is-grouped' style='margin-top: 20px;'>
+                    <p class="control is-expanded">
+                        <a type="button" role="button" href="{% url 'questionarios:lista_questionarios' %}" class="button is-light is-fullwidth">Limpar</a>
+                    </p>
+                    <p class="control is-expanded">
+                        <button class="button is-primary is-fullwidth" type="submit">
+                            <span class="icon">
+                                <i class="mdi mdi-magnify"></i>
+                            </span>
+                            <span>Pesquisar</span>
+                        </button>
+                    </p>
+                </div>
+            </div>     
+        </form>
+    </div>
+
+    <!-- Coluna para a tabela e botão de adicionar novo questionário -->
+    <div class="column is-9">
+        <nav class="breadcrumb" aria-label="breadcrumbs">
+            <ul>
+                <li class="is-active"><a href="#" aria-current="page">Questionários</a></li>
+            </ul>
+        </nav>
+        <div>
+            <a class="button is-success is-outlined" type="button" style="margin-bottom:0.5rem" href="{% url 'questionarios:criar_questionario' %}">     
+                <span class="icon is-small">
+                    <i class="mdi mdi-plus"></i>
+                </span>
+                <span>Criar Questionário</span>
+            </a>   
+        </div>
+        
+        <!-- Renderização da tabela de questionários -->
+        {% render_table table %}
+    </div>
+</div>
+
+{% endblock content %}
+{% block scripts %}
+{% endblock scripts %}

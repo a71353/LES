@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+{% load static %}
+{% load inscricoes_extras %}
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+
+    <title>Relatório de Todos os Roteiros - Dia Aberto {{ ano }} Universidade do Algarve</title>
+    
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+            margin-bottom: 3cm
+            
+            @frame footer_frame {
+                /* Static frame */
+                -pdf-frame-content: footer_content;
+                left: 50pt;
+                width: 512pt;
+                top: 772pt;
+                height: 20pt;
+            }
+        }
+        body {
+        font-family: 'Arial', sans-serif;
+        line-height: 1.6;
+        }
+        .section-header {
+            text-align: center;
+            padding: 10px;
+            background-color: #eee;
+            border: 1px solid #000;
+            font-weight: bold;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+        .roteiro-detail {
+            margin-top: 10px;
+        }
+        .roteiro-detail span {
+            font-weight: bold;
+        }
+        .has-text-centered {
+            text-align: center;
+            margin-right: 20px;
+        }
+        .has-text-centered img:last-child {
+            margin-right: 0; /* Remove a margem da última imagem */
+            margin-bottom: 20px; /* Espaço entre a última imagem e o título */
+        }
+        .has-text-centered h1 {
+            margin-top: 100px; /* Espaço acima do título */
+        }
+        .header-large {
+            font-size: 24px;
+        }
+        .sub-header {
+            font-weight: bold;
+            margin-top: 15px;
+        }
+        .content-block {
+            margin-bottom: 10px;
+        }
+
+        .roteiro-header {
+            color: #4a90e2;
+            text-align: left;
+            font-size: 14px; /* Um tamanho de fonte maior e mais legível */
+            font-weight: bold;
+            font-family: 'Montserrat', sans-serif;
+            margin: 20px 0;
+            line-height: 1.4; /* Espaçamento da linha para melhor legibilidade */
+            border-bottom: 1px solid #4a90e2;
+            text-transform: uppercase;
+        }
+       
+    </style>
+</head>
+
+<body>
+ 
+    <div class="has-text-centered">
+        <img src="{{ 'img/ualg-logo.png'|get64 }}" alt="UAlg Logo" height="100">
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <img src="{{ 'img/logo-large.png'|get64 }}" alt="Dia Aberto Logo" height="100">
+       
+        <h1> Roteiros e Atividades - Dia Aberto {{ ano }} - Universidade do Algarve</h1>
+    </div>
+   
+
+    {% for dados in dados_roteiros %}
+    <div class="roteiro-header ">
+        {{ dados.roteiro.nome }}
+    </div>
+
+    <div class="roteiro-detail">
+        <div class="content-block"><span>Descrição:</span> {{ dados.roteiro.descricao }}</div>
+        <div class="content-block"><span>Público-Alvo:</span> {{ dados.roteiro.publicoalvo }}</div>
+        <div class="content-block"><span>Máximo de Participantes:</span> {{ dados.roteiro.participantesmaximo }}</div>
+        <div class="content-block"><span>Duração Esperada:</span> {{ dados.roteiro.duracaoesperada }} minutos</div>
+    </div>
+
+    <div class="sub-header">Atividades do Roteiro:</div>
+    {% for atividade in dados.atividades %}
+        <div class="content-block">{{ atividade.nome }} no espaço {{ atividade.espacoid.nome }}, edifício {{ atividade.espacoid.edificio.nome }}, andar {{ atividade.espacoid.andar }}.</div>
+    {% endfor %}
+
+    <div class="sub-header">Sessões do Roteiro:</div>
+    {% for sessao in dados.sessoes %}
+        <div class="content-block">Dia {{ sessao.dia }}: das {{ sessao.horarioid.inicio }} às {{ sessao.horarioid.fim }}.</div>
+    {% endfor %}
+
+    <div class="section-header"><pdf:spacer height="40px" /></div>
+    {% endfor %}
+
+    {% for atividade_com_sessoes in dados_roteiros.0.atividades_com_sessoes %}
+    <div class="roteiro-header">
+        {{ atividade_com_sessoes.atividade.nome }}
+    </div>
+    <div class="roteiro-detail">
+        <div class="content-block"><span>Descrição:</span> {{ atividade_com_sessoes.atividade.descricao }}</div>
+        <div class="content-block"><span>Público-Alvo:</span> {{ atividade_com_sessoes.atividade.publicoalvo }}</div>
+        <div class="content-block"><span>Máximo de Participantes:</span> {{ atividade_com_sessoes.atividade.participantesmaximo }}</div>
+        <div class="content-block"><span>Duração Esperada:</span> {{ atividade_com_sessoes.atividade.duracaoesperada }} minutos</div>
+    </div>
+    <div class="sub-header">Sessões da Atividade:</div>
+    {% for sessao in atividade_com_sessoes.sessoes %}
+        <div class="content-block">Dia {{ sessao.dia }}: das {{ sessao.horarioid.inicio }} às {{ sessao.horarioid.fim }}.</div>
+    {% endfor %}
+{% endfor %}
+
+    
+   
+    
+   
+
+    
+   
+</body>
+</html>

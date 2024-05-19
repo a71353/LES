@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+{% load static %}
+{% load inscricoes_extras %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscrição no Dia Aberto {{ano}} - Universidade do Algarve</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+
+            @frame footer_frame {
+                /* Static frame */
+                -pdf-frame-content: footer_content;
+                left: 50pt;
+                width: 512pt;
+                top: 772pt;
+                height: 20pt;
+            }
+        }
+        
+        .body-page {
+            page-break-after: always;
+        }
+        
+        .last-page {
+            page-break-after: avoid;
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .page-header img {
+            height: 100px;
+        }
+
+        .section-header {
+            text-align: center;
+            padding: 3px;
+            padding-top: 10px;
+            background-color: #eee;
+            border: 1px solid #000;
+            font-weight: bold;
+        }
+
+        .responsaveis-table {
+            width: 100%;
+            max-width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .responsaveis-table td {
+            padding: 3px;
+            padding-top: 2px;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-bottom: 1px solid #000;
+            text-align: center;
+        }
+
+        .responsaveis-table thead th {
+            padding-left: 6px;
+            padding-top: 4px;
+            vertical-align: bottom;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-top: 1px solid #000;
+            text-align: left;
+        }
+
+        .inscricao-table {
+            width: 100%;
+            max-width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .inscricao-table td {
+            padding: 3px;
+            padding-top: 6px;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-bottom: 1px solid #000;
+            text-align: center;
+        }
+
+        .inscricao-table thead th {
+            padding-top: 4px;
+            vertical-align: bottom;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-top: 1px solid #000;
+            background-color: #eee
+        }
+
+        .escola-table {
+            width: 100%;
+            max-width: 100%;
+            {% if inscricao.individual %}margin-bottom: 15px;{% endif %}
+        }
+
+        .escola-table td {
+            padding: 3px;
+            padding-top: 6px;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-bottom: 1px solid #000;
+            text-align: center;
+        }
+
+        .escola-table thead th {
+            padding-top: 4px;
+            vertical-align: bottom;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-top: 1px solid #000;
+            background-color: #eee
+        }
+
+        .turma-table {
+            width: 100%;
+            max-width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .turma-table td {
+            padding: 3px;
+            padding-top: 6px;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-bottom: 1px solid #000;
+            text-align: center;
+        }
+
+        .turma-table thead th {
+            padding-top: 4px;
+            vertical-align: bottom;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-top: 1px solid #000;
+            background-color: #eee
+        }
+
+        .sessoes-table {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .sessoes-table th,
+        .sessoes-table td {
+            padding: 3px;
+            padding-top: 6px;
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            text-align: center;
+        }
+
+        .sessoes-table thead th {
+            vertical-align: bottom;
+            border-bottom: 1.2px solid #000;
+            background-color: #eee
+        }
+
+        .has-text-centered {
+            text-align: center;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div id="footer_content">Dia Aberto da UAlg {{ano}} - página
+        <pdf:pagenumber> de <pdf:pagecount>
+    </div>
+
+    {% for dia in grouped_sessoes_data %}
+    <div class="body-page">
+        <div class="page-header">
+            <img src="{{ logo_url }}" alt="UAlg Logo">
+            <img src="{{ logo_url2 }}" alt="Dia Aberto Logo">
+            <h1>Dia Aberto {{ ano }} - Universidade do Algarve</h1>
+        </div>
+        <div class="section-header">Relatório do Dia {{ dia.day }}</div>
+        <table class="turma-table">
+            <thead>
+                <tr>
+                    <th width="50%"><strong>Atividade</strong></th>
+                    <th width="25%"><strong>Tipo</strong></th>
+                    <th width="25%"><strong>Hora de Início</strong></th>
+                    <th width="25%"><strong>Hora de Fim</strong></th>
+                    <th width="15%"><strong>Número de Inscritos</strong></th>
+                    <th width="15%"><strong>Capacidade Máxima</strong></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sessao in dia.sessions %}
+                <tr>
+                    <td>{{ sessao.sessao__atividadeid__nome }}</td>
+                    <td>{{ sessao.sessao__atividadeid__tipo }}</td>
+                    <td>{{ sessao.sessao__horarioid__inicio }}</td>
+                    <td>{{ sessao.sessao__horarioid__fim }}</td>
+                    <td>{{ sessao.nparticipantes_total }}</td>
+                    <td>{{ sessao.sessao__atividadeid__participantesmaximo }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+    <div class="last-page">
+            <div class="page-header">
+                <img src="{{ logo_url }}" alt="UAlg Logo">
+                <img src="{{ logo_url2 }}" alt="Dia Aberto Logo">
+                <h1>Dia Aberto {{ ano }} - Universidade do Algarve</h1>
+            </div>
+            <div class="section-header">Resumo de Todas as Atividades</div>
+            <table class="turma-table">
+                <thead>
+                    <tr>
+                        <th width="20%"><strong>Dia</strong></th>
+                        <th width="30%"><strong>Atividade</strong></th>
+                        <th width="20%"><strong>Tipo</strong></th>
+                        <th width="25%"><strong>Hora de Início</strong></th>
+                        <th width="25%"><strong>Hora de Fim</strong></th>
+                        <th width="15%"><strong>Número de Inscritos</strong></th>
+                        <th width="15%"><strong>Capacidade Máxima</strong></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dia in grouped_sessoes_data %}
+                        {% for sessao in dia.sessions %}
+                        <tr>
+                            <td>{{ dia.day }}</td>
+                            <td>{{ sessao.sessao__atividadeid__nome }}</td>
+                            <td>{{ sessao.sessao__atividadeid__tipo }}</td>
+                            <td>{{ sessao.sessao__horarioid__inicio }}</td>
+                            <td>{{ sessao.sessao__horarioid__fim }}</td>
+                            <td>{{ sessao.nparticipantes_total }}</td>
+                            <td>{{ sessao.sessao__atividadeid__participantesmaximo }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+    </div>
+</body>

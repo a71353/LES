@@ -1,0 +1,414 @@
+{% extends 'app.html' %}
+{% load static %}
+{% block content %}
+<nav class="breadcrumb" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="{% url 'home' %}">Início</a></li>
+    <li class="is-active"><a href="#" aria-current="page">Criar Questionário</a></li>
+  </ul>
+  <div style="padding: 3rem 2vw 1rem">
+    <div style="padding: 3rem 2vw 1rem;">
+
+   <div class="steps is-success">
+
+       <div class="step-item is-completed is-success">
+
+           <div class="step-marker">
+
+               <span class="icon">
+
+                   <i class="mdi mdi-flask mdi-22px"></i>
+
+               </span>
+
+           </div>
+
+           <div class="step-details">
+
+               <p class="step-title">Questionario</p>
+
+           </div>
+
+       </div>
+
+       
+       <div class="step-item is-completed is-success">
+
+            <div class="step-marker">
+
+                <span class="icon">
+
+                    <i class="mdi mdi-calendar-check mdi-22px"></i>
+
+                </span>
+
+            </div>
+
+            
+
+            <div class="step-details">
+
+                <p class="step-title">Perguntas</p>
+
+            </div>
+
+        </div>
+
+
+
+
+       <div class="step-item is-success">
+
+           <div class="step-marker">
+
+               <span class="icon">
+
+                   <i class="mdi mdi-check"></i>
+
+               </span>
+
+           </div>
+
+           <div class="step-details">
+
+               <p class="step-title">Concluir</p>
+
+           </div>
+
+       </div>
+
+   </div>
+</div>
+<section class="section">
+    <div class="container">
+        <div class="table ">
+            <div class="table-wrapper">
+                <table class="table is-hoverable is-fullwidth">
+                    <thead>
+                        <tr>
+                            <th>Texto da Pergunta</th>
+                            <th>Tipo de Resposta</th>
+                            <th>Tema</th>
+                            <th style="text-align: right;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pergunta in perguntas_quest %}
+                        <tr>
+                            <td data-label="Texto da Pergunta" class="truncate-text">
+                                {% if pergunta.tipo_resposta == 'multipla_escolha' %}
+                                <span class="icon" style="cursor: pointer; color: blue;" onclick="toggleOptions({{ pergunta.id }})">
+                                    <i class="mdi mdi-chevron-down"></i>
+                                </span>
+                                {% endif %}
+                                {{ pergunta.texto }}
+                            </td>
+                            <td data-label="Tipo de Resposta">{{ pergunta.get_tipo_resposta_display }}</td>
+                            <td data-label="Tema">{{ pergunta.tema.tema }}</td>
+                            <td style="text-align: right;">
+                                <div style="display: inline-flex; justify-content: right;">
+                                    <a id='edit' href="{% url 'questionarios:editar_perguntas' pergunta.id %}">
+                                        <span class="icon is-small" style="margin-right: 0px;">
+                                            <i class="mdi mdi-circle-edit-outline mdi-24px"></i>
+                                        </span>
+                                    </a>
+                                    <a onclick="alert.render('Tem a certeza que deseja eliminar a pergunta?', '{% url 'questionarios:eliminarPergunta' pergunta.id %}')">
+                                        <span class="icon has-text-danger" style="margin-right: -30px;">
+                                            <i class="mdi mdi-trash-can-outline mdi-24px"></i>
+                                        </span>
+                                    </a>
+                                </div>
+                            </td>
+                            
+                            
+                        </tr>
+                        <tr id="optionsRow_{{ pergunta.id }}" style="display: none;">
+                            <td colspan="4">
+                                <table class="table is-fullwidth">
+                                    <tbody>
+                                        {% for opcao in pergunta.opcoes.all %}
+                                        <tr>
+                                            <td>Opção {{ forloop.counter }}:</td>
+                                            <td>{{ opcao.texto_opcao }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+                
+            </div>
+            <div id="alertaTextoVazio" class="notification is-danger" style="display: none;">
+                Por favor, escreva o texto da pergunta antes de adicionar opções de resposta.
+            </div>
+
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="container">
+        {% for message in messages %}
+            <div class="notification {% if message.tags %}is-{{ message.tags }}{% endif %}">
+                <button class="delete"></button>
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</section>
+
+<section class="section">
+
+
+    <div class="container">
+        
+        <div class="box">
+            <h2 class="title has-text-grey is-uppercase" style="font-size: 0.9rem; margin-bottom: 2rem;">Adicionar Nova Pergunta</h2>
+            <form method="POST" action="" onsubmit="return validarFormulario();">
+                {% csrf_token %}
+                
+               <div class="field">
+                    <label class="label">Tema</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                {{ form.tema }}
+                            </div>
+                        </div>
+                    </div>
+            
+                <div class="columns">
+                    <div class="column is-6">
+                        <div class="field">
+                            <label class="truncate-text label-spacing">Texto da Pergunta</label> <!-- Classe CSS aplicada aqui -->
+                            <div class="control">
+                                <input class="input" type="text" name="texto" placeholder="Digite o texto da pergunta">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column is-4">
+                        <div class="field">
+                            <label class="truncate-text label-spacing">Tipo de Resposta</label>
+                            <div class="control">
+                                <div class="select is-fullwidth">
+                                    <select name="tipo_resposta">
+                                        <option value="texto_livre">Texto Livre</option>
+                                        <option value="multipla_escolha">Escolha Múltipla</option>
+                                        <option value="inteiro">Inteiro</option>
+                                        <!-- Outros tipos de resposta -->
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    
+                    
+                    <div class="column is-2">
+                        <div class="field">
+                            <label class="label-spacing">&nbsp;</label> <!-- Espaço em branco para alinhamento -->
+                            <div class="control">
+                                <button class="button is-link" style="width: 100%;">Adicionar Pergunta</button>
+                                
+                            </div>
+                            <!-- Modal para adicionar opções de resposta múltipla -->
+                            <div id="modalMultiplaEscolha" class="modal">
+                                <div class="modal-background"></div>
+                                <div class="modal-card">
+                                <header class="modal-card-head">
+                                    <p class="modal-card-title">Adicionar Opções</p>
+                                    <button class="delete" aria-label="close" onclick="fecharModalSemSalvar(event)"></button>
+                                </header>
+                                <section class="modal-card-body">
+                                    <!-- Conteúdo do modal -->
+                                    <div class="field">
+                                    <label class="label">Opção</label>
+                                    <div class="control">
+                                        <input class="input" type="texto_opcao" id="texto_opcao" placeholder="Digite a opção">
+                                    </div>
+                                    </div>
+                                    <button class="button is-success" type="button" onclick="adicionarOpcao(event)">Adicionar Opção</button>
+                                    <div id="opcoesContainer"></div> <!-- Container para listar as opções adicionadas -->
+                                </section>
+                                <div id="modalErroMensagem" class="notification is-danger is-light" style="display: none;">
+                                    Por favor, adicione pelo menos duas opções.
+                                </div>
+                                <footer class="modal-card-foot">
+                                    <button class="button is-success" onclick="fecharModal(event)">Salvar Opções</button>
+
+                                </footer>
+                                <input type="hidden" name="opcoes" id="opcoes" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+</section>
+<div class="column is-8 is-offset-2">
+  <div class="level">
+    <div class="level-left">
+        <a class="button is-medium is-outlined" href="{% url 'questionarios:editar_questionarios' id=id %}" name="anterior" value="anterior">Anterior</a>
+       </a>
+    </div>
+    <div class="level-right">
+        <a class="button is-medium is-success is-outlined" href="{% url 'questionarios:lista_questionarios' %}" name="anterior" value="anterior">Próximo</a>   
+      </div>
+    </div>
+  </div>
+</form>
+
+
+<script>
+
+    function toggleOptions(perguntaId) {
+        var row = document.getElementById('optionsRow_' + perguntaId);
+        if (row.style.display === 'none') {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    }
+
+
+    function prepararEEnviarFormulario() {
+        var opcoes = [];
+        document.querySelectorAll('#opcoesContainer .opcao-item span').forEach(function(span) {
+            opcoes.push(span.textContent);
+        });
+        document.getElementById('opcoes').value = JSON.stringify(opcoes);
+        // Remover qualquer lógica de submissão de formulário daqui
+    }
+    
+
+    document.querySelector('select[name="tipo_resposta"]').addEventListener('change', function() {
+        if (this.value === 'multipla_escolha') {
+            // Verifica se o campo de texto da pergunta está vazio
+            var textoPergunta = document.querySelector('input[name="texto"]').value.trim();
+            if (textoPergunta === '') {
+                // Se estiver vazio, exibe o alerta
+                document.getElementById('alertaTextoVazio').style.display = 'block';
+                // Reverte a seleção para evitar abrir o modal
+                this.selectedIndex = 0;
+                return;
+            }
+            // Se houver texto na pergunta, abre o modal
+            document.getElementById('modalMultiplaEscolha').classList.add('is-active');
+        }
+    });
+    
+     // Função para ocultar o alerta quando o campo de texto da pergunta for preenchido
+     document.querySelector('input[name="texto"]').addEventListener('input', function() {
+        var textoPergunta = this.value.trim();
+        if (textoPergunta !== '') {
+            document.getElementById('alertaTextoVazio').style.display = 'none';
+        }
+    });
+
+
+
+    function validarFormulario() {
+        var tipoResposta = document.querySelector('select[name="tipo_resposta"]').value;
+        if (tipoResposta === 'multipla_escolha') {
+            var opcoes = document.querySelectorAll('#opcoesContainer .opcao-item');
+            if (opcoes.length < 2) {
+                document.getElementById('modalErroMensagem').style.display = 'block';
+                document.getElementById('modalMultiplaEscolha').classList.add('is-active');
+                return false; // Impede o envio do formulário se houver menos de duas opções
+            }
+        }
+        prepararEEnviarFormulario(); // Agora apenas prepara os dados sem submeter
+        return true; // Permite a submissão do formulário se não for de múltipla escolha ou se passar na validação
+    }
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+        (document.querySelectorAll('.notification .delete') || []).forEach(($delete) => {
+            const $notification = $delete.parentNode;
+            
+            $delete.addEventListener('click', () => {
+                $notification.parentNode.removeChild($notification);
+            });
+        });
+    });
+    
+
+
+
+    // Função para adicionar opções dentro do modal
+    function adicionarOpcao(event) {
+        event.preventDefault(); // Isso previne o comportamento padrão do evento, como o envio de um formulário
+
+        var texto_opcao = document.getElementById('texto_opcao').value;
+        var container = document.getElementById('opcoesContainer');
+        if (texto_opcao) {
+            var div = document.createElement('div');
+            div.classList.add('opcao-item'); // Adiciona uma classe para estilização
+            div.innerHTML = `
+                <span>${texto_opcao}</span>
+                <i class="fas fa-trash-alt" onclick="removerOpcao(this)"></i>
+            `;
+            container.appendChild(div);
+            document.getElementById('texto_opcao').value = ''; // Limpa o campo de texto
+        }
+    }
+
+    // Função para remover uma opção
+    function removerOpcao(element) {
+        element.parentNode.remove(); // Remove o pai do ícone de lixeira, ou seja, a div que contém a opção
+    }
+
+
+
+    function fecharModalSemSalvar(event) {
+        event.preventDefault();
+        document.getElementById('modalMultiplaEscolha').classList.remove('is-active');
+    }
+    
+
+    // Função para fechar o modal e, opcionalmente, salvar as opções
+    function fecharModal(event) {
+        event.preventDefault();
+        var opcoes = document.querySelectorAll('#opcoesContainer .opcao-item');
+        if (opcoes.length < 2) {
+            document.getElementById('modalErroMensagem').style.display = 'block';
+        } else {
+            prepararEEnviarFormulario(); // Chame aqui apenas se a validação for bem-sucedida
+            document.getElementById('modalMultiplaEscolha').classList.remove('is-active'); // Fecha o modal após salvar
+        }
+    }
+    
+    
+</script>
+
+
+
+<style>
+    .truncate-text {
+        max-width: 250px; /* Ajuste conforme necessário */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .label-spacing {
+        margin-bottom: 0.9rem; /* Ajuste o valor conforme necessário */
+    }
+    
+
+    
+  .label {
+    font-weight: normal;
+  }
+  .b-steps .steps .step-items .step-item .step-details .step-title {
+    font-size: 1rem;
+  }
+</style>
+{% endblock content %}
