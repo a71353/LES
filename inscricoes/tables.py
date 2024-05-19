@@ -6,7 +6,7 @@ import itertools
 from django.utils.html import format_html
 from django.urls import reverse
 from django.db.models import Max, Min, OuterRef, Subquery
-from inscricoes.models import Inscricaosessao, RegistoGrupo
+from inscricoes.models import Inscricaosessao
 
 class InscricoesTable(tables.Table):
     grupo = tables.Column('Grupo', accessor='id', attrs={"th": {"width": "65"}})
@@ -59,7 +59,7 @@ class InscricoesTable(tables.Table):
         return format_html(f"{record.ano}º {value}, {record.areacientifica}")
 
     def render_acoes(self, record):
-        primeiro_botao = f"""
+        botao1 = f"""
             <a href='{reverse("inscricoes:consultar-inscricao", kwargs={"pk": record.pk})}'
                 data-tooltip="Editar">
                 <span class="icon">
@@ -68,7 +68,7 @@ class InscricoesTable(tables.Table):
             </a>
         """
 
-        segundo_botao = f"""
+        botao2 = f"""
             <a onclick="alert.render('Tem a certeza que pretende eliminar esta inscrição?','{reverse("inscricoes:apagar-inscricao", kwargs={"pk": record.pk})}')"
                 data-tooltip="Apagar">
                 <span class="icon has-text-danger">
@@ -77,9 +77,9 @@ class InscricoesTable(tables.Table):
             </a>
         """
 
-        terceiro_botao = ""
-        if record.getQt != record.getPresentes and record.getPresentes != 0:
-            terceiro_botao = f"""
+        botao3 = ""
+        if record.getPresentes != 0:
+            botao3 = f"""
                 <a href='{reverse("inscricoes:presença-inscricao", kwargs={"inscricao_id": record.getIncricaoId})}'
                     data-tooltip="Detalhe presenças">
                     <span class="icon">
@@ -90,8 +90,8 @@ class InscricoesTable(tables.Table):
 
         return format_html(f"""
             <div>
-                {primeiro_botao}
-                {segundo_botao}
-                {terceiro_botao}
+                {botao1}
+                {botao2}
+                {botao3}
             </div>
         """)

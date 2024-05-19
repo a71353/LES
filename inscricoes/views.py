@@ -966,10 +966,9 @@ def presençaInscricao(request,inscricao_id):
         return user_check_var.get('render')
     if inscricao_id is not None:
         inscricao = Inscricao.objects.get(id=inscricao_id)
-        allowMore, allowDelete = False, False
 
     return render(request=request,
                   template_name='inscricoes/consultarPresença.html',context={
-                    'inscricao2': Inscricao.objects.get(id=inscricao_id),
+                    'inscricao': Inscricao.objects.get(id=inscricao_id),
                     'inscricaosessoes': Inscricaosessao.objects.all().filter(inscricao=inscricao_id),
                   })
