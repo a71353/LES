@@ -331,16 +331,23 @@ function getImageDataURL(path) {
 }
 
 
-
 function exportarCSV() {
-    var csvContent = "data:text/csv;charset=utf-8,Pergunta;Opcao;Total\n"; // Cabeçalho do CSV
+    var csvContent = "data:text/csv;charset=utf-8,Pergunta;Opcao;Total;Percentagem\n"; // Cabeçalho atualizado do CSV
+    var percentagens = []; // Lista para armazenar as percentagens
 
     {% for resultado in resultados %}
-    var pergunta = "{{ resultado.pergunta }}".replace(/"/g, '""'); 
+    var pergunta = "{{ resultado.pergunta }}".replace(/"/g, '""');
+    var totalRespostas = 0; // Variável para armazenar o total de respostas para a pergunta atual
     {% for resposta in resultado.respostas %}
-    var opcao = "{{ resposta.opçao_resposta__texto_opcao }}".replace(/"/g, '""'); 
+        totalRespostas += parseInt("{{ resposta.total }}");
+    {% endfor %}
+    
+    {% for resposta in resultado.respostas %}
+    var opcao = "{{ resposta.texto_opcao }}".replace(/"/g, '""'); 
     var total = "{{ resposta.total }}";
-    csvContent += '"' + pergunta + '";"' + opcao + '";"' + total + '"\n';
+    var percentagem = (parseInt(total) / totalRespostas * 100).toFixed(2); // Calcula a percentagem
+    percentagens.push(percentagem); // Armazena a percentagem na lista
+    csvContent += '"' + pergunta + '";"' + opcao + '";"' + total + '";"' + percentagem + '%"\n'; // Linha atualizada
     {% endfor %}
     {% endfor %}
 
@@ -348,9 +355,9 @@ function exportarCSV() {
     var link = document.createElement("a");
     link.setAttribute("href", encodedUri);
     link.setAttribute("download", "estatistica_questionario_Atividade/Roteiros_{{diaaberto}}.csv");
-    document.body.appendChild(link); 
+    document.body.appendChild(link);
 
-    link.click(); 
+    link.click();
 }
 function escapeCsvValue(value) {
     // Escapa aspas duplas e envolve o valor em aspas duplas

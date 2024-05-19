@@ -420,7 +420,7 @@ def estatisticaAtividade(request, diaabertoid=None):
     questionario = diaaberto.questionario
    
     
-    tema_atividade = TemaQ.objects.filter(tema='Atividades').first()
+    tema_atividade = TemaQ.objects.filter(tema='Atividade').first()
     
     if tema_atividade is None:
         return render(request, 'mensagem.html', {
@@ -506,6 +506,7 @@ def estatisticaAtividade(request, diaabertoid=None):
         'roteiros': roteiros
     })
 
+
 def estatisticaporAtividade(request, atividadeid):
     """ View que mostra as estatísticas de uma atividade específica baseadas nas respostas ao questionário """
     user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -530,7 +531,7 @@ def estatisticaporAtividade(request, atividadeid):
     questionario = diaaberto.questionario
     print("questionarios", questionario)
     
-    tema_atividade = TemaQ.objects.filter(tema='Atividades').first()
+    tema_atividade = TemaQ.objects.filter(tema='Atividade').first()
     
     if tema_atividade is None:
         return render(request, 'mensagem.html', {
@@ -616,7 +617,7 @@ def estatisticaporRoteiro(request, roteiroid=None):
     questionario = diaaberto.questionario
     print("questionarios", questionario)
     
-    tema_atividade = TemaQ.objects.filter(tema='Atividades').first()
+    tema_atividade = TemaQ.objects.filter(tema='Atividade').first()
     
     if tema_atividade is None:
         return render(request, 'mensagem.html', {
