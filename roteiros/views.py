@@ -484,7 +484,7 @@ def alterarRoteiro(request,id):
                     sessao.horarioid=Horario.objects.get(id=new_Horario.id)
                     sessao.vagas = roteiro_object_formed.participantesmaximo
                     sessao.save()
-            return redirect('roteiros:sessaoRoteiro',id)
+            return redirect('roteiros:sessaoRoteiro',roteiro.id)
         else:
             #roteiro_object_form = RoteiroForm()
             atividades = Atividade.objects.all()  
