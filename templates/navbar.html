@@ -63,9 +63,7 @@
       <a href="{% url 'utilizadores:consultar-utilizadores' %}" class="navbar-item">
         Utilizadores
       </a>
-      <a href="{% url 'roteiros:criarRoteiro' %}" class="navbar-item">
-        Roteiros
-      </a>
+      
 
 
       {% elif request.user|has_group:'Administrador'%}
@@ -109,6 +107,7 @@
         </a>
         <div class="navbar-dropdown">
           <a href="{% url 'estatisticas:estatisticas_almocos' %}" class="navbar-item">Almoços</a>
+          <a href="{% url 'estatisticas:estatistica_transporte' %}" class="navbar-item">transporte</a>
         </div>
       </div>
       <a href="{% url 'inscricoes:tipo_estatistica' %}" class="navbar-item">

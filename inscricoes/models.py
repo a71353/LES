@@ -228,33 +228,3 @@ class Inscricaotransporte(models.Model):
     class Meta:
         db_table = 'InscricaoTransporte'
         unique_together = (('inscricao', 'transporte'),)
-
-class RegistoGrupo(models.Model):
-    
-    inscricao = models.ForeignKey(
-        Inscricao,
-        on_delete=models.CASCADE,
-        related_name='registos_de_grupo'
-    )
-    presentes = models.IntegerField(
-        validators=[
-            validators.MinValueValidator(1),
-            validators.MaxValueValidator(100),
-        ]
-    )
-    # Choices for the status field
-    STATUS_CHOICES = [
-        ('completo', 'Completo'),
-        ('incompleto', 'Incompleto'),
-        ('cancelado', 'Cancelado'),
-    ]
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default='completo'
-    )
-
-    class Meta:
-        db_table = 'registoGrupo'
-        verbose_name = 'Registo de grupo'
-        verbose_name_plural = 'Registo de grupos'

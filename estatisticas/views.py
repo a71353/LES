@@ -1,3 +1,4 @@
+from collections import defaultdict
 from django.shortcuts import render
 from configuracao.models import Diaaberto,Menu, Prato
 from questionariosPublicados.models import *
@@ -8,6 +9,7 @@ from django.http import HttpResponse
 from configuracao.models import Diaaberto
 from questionariosPublicados.models import Pergunta, Resposta_Individual
 from django.contrib.auth import get_user
+from django.shortcuts import render, redirect, get_object_or_404
 
 def estatisticas_almocos(request):
     user = get_user(request)
@@ -164,3 +166,43 @@ def estatisticas_almocos_csv(request):
     else:
         return redirect('utilizadores:mensagem',9001)
 
+def estatistica_transporte(request):
+    user = get_user(request)
+    if not user.groups.filter(name="Administrador").exists():
+        return redirect('utilizadores:mensagem', 9000)
+
+    diaabertoid = request.GET.get('diaaberto')
+    if not diaabertoid:
+        diaabertoid = Diaaberto.objects.filter(ano__lte=datetime.now().year).order_by('-ano').first().id
+    diaaberto = get_object_or_404(Diaaberto, id=diaabertoid)
+
+    if not diaaberto.questionario_id:
+        return redirect('utilizadores:mensagem1', 19)
+
+    questionario = get_object_or_404(Questionario, id=diaaberto.questionario_id)
+    tema_transporte = get_object_or_404(TemaQ, tema='Transporte')
+    perguntas = Pergunta.objects.filter(questionario_id=questionario.id, tema=tema_transporte.id, tipo_resposta='multipla_escolha')
+
+    resultados = []
+    if perguntas.exists():
+        for pergunta in perguntas:
+            respostas_individuais = Resposta_Individual.objects.filter(pergunta=pergunta)
+            opcoes = OpcaoP.objects.filter(pergunta=pergunta).in_bulk(field_name='id')
+            contador_respostas = defaultdict(int)
+
+            for resposta in respostas_individuais:
+                id_opcao = resposta.resposta_texto
+                texto_opcao = opcoes[int(id_opcao)].texto_opcao if int(id_opcao) in opcoes else 'Opção não encontrada'
+                contador_respostas[texto_opcao] += 1
+
+            respostas_agrupadas = [{'texto_opcao': texto_opcao, 'total': total} for texto_opcao, total in contador_respostas.items()]
+            resultados.append({
+                'pergunta': pergunta.texto,
+                'respostas': respostas_agrupadas
+            })
+
+    return render(request, 'estatisticas/estatistica_transporte.html', {
+        'diaaberto': diaaberto,
+        'diasabertos': Diaaberto.objects.all(),
+        'resultados': resultados
+    })

@@ -63,7 +63,13 @@ def proporRoteiro(request):
     if user_check_var.get('exists') == False:
         return user_check_var.get('render')
     today= datetime.now(timezone.utc) 
-    diaabertopropostas=Diaaberto.objects.get(datapropostasatividadesincio__lte=today,dataporpostaatividadesfim__gte=today)
+    try:
+       diaabertopropostas=Diaaberto.objects.get(datapropostasatividadesincio__lte=today,dataporpostaatividadesfim__gte=today)
+    except Diaaberto.DoesNotExist:
+        return render(request, 'mensagem.html', {
+            'tipo': 'error',
+            'mensagem': 'O Periodo de propor Roteiros ja acabou'
+        })
 
     coordenador = Coordenador.objects.get(utilizador_ptr_id=request.user.id)
     unidade_organica = coordenador.faculdade
@@ -126,7 +132,7 @@ def inserirsessaoRoteiro(request, id):
          #                                 dataporpostaatividadesfim__gte=today)
         
 
-        print(diaaberto)
+ 
         diainicio = diaaberto.datadiaabertoinicio.date()
         diafim = diaaberto.datadiaabertofim.date()
         totaldias = diafim - diainicio + timedelta(days=1)
@@ -139,7 +145,7 @@ def inserirsessaoRoteiro(request, id):
         roteiroid = Roteiro.objects.get(id=id)
         
         sessoes = Sessao.objects.all().filter(roteiroid=id)
-        print(sessoes)
+ 
         check = len(sessoes)
     
         if request.method == "POST":

@@ -426,7 +426,7 @@ def estatisticaAtividade(request, diaabertoid=None):
     questionario = diaaberto.questionario
    
     
-    tema_atividade = TemaQ.objects.filter(tema='Atividades').first()
+    tema_atividade = TemaQ.objects.filter(tema='Atividade').first()
     
     if tema_atividade is None:
         return render(request, 'mensagem.html', {
@@ -512,6 +512,7 @@ def estatisticaAtividade(request, diaabertoid=None):
         'roteiros': roteiros
     })
 
+
 def estatisticaporAtividade(request, atividadeid):
     """ View que mostra as estatísticas de uma atividade específica baseadas nas respostas ao questionário """
     user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -536,7 +537,7 @@ def estatisticaporAtividade(request, atividadeid):
     questionario = diaaberto.questionario
     print("questionarios", questionario)
     
-    tema_atividade = TemaQ.objects.filter(tema='Atividades').first()
+    tema_atividade = TemaQ.objects.filter(tema='Atividade').first()
     
     if tema_atividade is None:
         return render(request, 'mensagem.html', {
@@ -622,7 +623,7 @@ def estatisticaporRoteiro(request, roteiroid=None):
     questionario = diaaberto.questionario
     print("questionarios", questionario)
     
-    tema_atividade = TemaQ.objects.filter(tema='Atividades').first()
+    tema_atividade = TemaQ.objects.filter(tema='Atividade').first()
     
     if tema_atividade is None:
         return render(request, 'mensagem.html', {
@@ -1022,10 +1023,9 @@ def presençaInscricao(request,inscricao_id):
         return user_check_var.get('render')
     if inscricao_id is not None:
         inscricao = Inscricao.objects.get(id=inscricao_id)
-        allowMore, allowDelete = False, False
 
     return render(request=request,
                   template_name='inscricoes/consultarPresença.html',context={
-                    'inscricao2': Inscricao.objects.get(id=inscricao_id),
+                    'inscricao': Inscricao.objects.get(id=inscricao_id),
                     'inscricaosessoes': Inscricaosessao.objects.all().filter(inscricao=inscricao_id),
                   })

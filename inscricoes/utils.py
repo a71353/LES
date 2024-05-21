@@ -5,7 +5,7 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 from django.shortcuts import get_object_or_404, render
-from inscricoes.models import Escola, Inscricao, Inscricaosessao, RegistoGrupo
+from inscricoes.models import Escola, Inscricao, Inscricaosessao
 from django.core.mail import EmailMessage
 from utilizadores.views import user_check
 from utilizadores.models import Administrador, Coordenador, Participante
