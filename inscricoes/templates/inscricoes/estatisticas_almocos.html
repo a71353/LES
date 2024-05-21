@@ -6,49 +6,47 @@
 {% block content %}
 <div id="tempo-medio">
     <h2 class="title has-text-grey is-uppercase" style="font-size: 2.0rem;">
-        Consultar estatisticas de questionarios de almoços
+        Consultar estatísticas de questionários de almoços
     </h2>
     <div class="columns">
         <div class="column">
             <nav aria-label="breadcrumbs" class="breadcrumb">
                 <ul>
                     <li><a href="/">Início</a></li>
-                    <li class="is-active"><a href="/estatisticas/almocos">Consultar estatisticas de almoços {{selecionado}}</a></li>
+                    <li class="is-active"><a href="/estatisticas/estatisticas_almocos">Consultar estatísticas de almoços {{selecionado}}</a>
+                    </li>
                 </ul>
             </nav>
             {% if nome_questionario %}
-                <h3 class="title is-4" style="color: #7A7A7A;">Questionário: <span style="color: black;"> {{ nome_questionario }}</span></h3>
-            {% endif %}
-            {% if data_publicacao %}
-                <h3 class="title is-4" style="color: #7A7A7A;">Data de Publicação: <span style="color: black;"> {{ data_publicacao }}</span></h3>
-            {% endif %}
-            {% if data_expiracao %}
-                <h3 class="title is-4" style="color: #7A7A7A;">Data de Expiração: <span style="color: black;"> {{ data_expiracao }}</span></h3>
+            <h3 class="title is-4" style="color: #7A7A7A; font-size: 1.0rem;">Questionário: <span style="color: black;">{{ nome_questionario }}</span></h3>
+            <h3 class="title is-4" style="color: #7A7A7A; font-size: 1.0rem;">Data de Publicação: <span style="color: black;">{{ data_publicacao }}</span></h3>
+            <h3 class="title is-4" style="color: #7A7A7A; font-size: 1.0rem;">Data de Expiração: <span style="color: black;">{{ data_expiracao }}</span></h3>
+            
             {% endif %}
             {% if respostas == "True" %}
-            <div style="display: flex; align-items: center; margin-bottom: 20px;">
-                <table class="table" style="margin-right: 20px;">
-                    <thead>
-                        <tr>
-                            <th style="background-color: rgb(253, 158, 147); text-align: center;">Participantes</th>
-                        </tr>
-                    </thead>
-                    <tbody style="background-color: aliceblue;">
-                        <tr>
-                            <td style="text-align: center;">
-                                {{ participantes }}
-                            </td>
-                        </tr>  
-                    </tbody>
-                </table>
-                <button id="exportPDF" style="font-size: 18px; padding: 12px 24px; background-color: black; color: white; border: none; border-radius: 8px; cursor: pointer;">
-                    Exportar para PDF
-                </button>
-                <a href="{% url 'estatisticas:exportar_csv' %}?diaaberto={{ diaabertoID }}" class="button is-primary">
-                    Exportar para CSV
-                </a>
-            </div>
-            As informacoes dos graficos estao em Porcentagens"%"
+                <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                    <table class="table" style="margin-right: 20px;">
+                        <thead>
+                            <tr>
+                                <th style="background-color: rgb(253, 158, 147); text-align: center; font-size: 1.0rem;">Participantes</th>
+                            </tr>
+                        </thead>
+                        <tbody style="background-color: aliceblue;">
+                            <tr>
+                                <td style="text-align: center;">
+                                    {{ participantes }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <button id="exportPDF" style="font-size: 18px; padding: 12px 24px; background-color: black; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                        Exportar para PDF
+                    </button>
+                    <a href="{% url 'estatisticas:estatisticas_almocos_csv' %}?diaaberto={{ diaabertoID }}" class="button is-primary">
+                        Exportar para CSV
+                    </a>
+                </div>
+                As informações dos gráficos estão em Porcentagens "%"
                 <div>&nbsp;</div>
                 {% for grafico in respostas_almocos_escolhas_multiplas %}
                     <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 2rem;">
@@ -60,15 +58,14 @@
                 {% endfor %}
                 <div>&nbsp;</div>
             {% elif respostas == "No" %}
-            <div style="height: 650px; width: 650px; margin-left: 20%; color: black; font-size: 24px;">
-                Nao há questionários para o Dia Aberto {{ano_diaaberto}}
-            </div>
-            {% else %}
-            <div style="height: 650px; width: 650px; margin-left: 20%; color: black; font-size: 24px;">
-                Nenhum participante respondeu ao Questionario
-            </div>
+                <div style="height: 650px; width: 650px; margin-left: 20%; color: black; font-size: 24px;">
+                    Não há questionários para o Dia Aberto {{ ano_diaaberto }}
+                </div>
+            {% elif respostas == "False" %}
+                <div style="height: 650px; width: 650px; margin-left: 20%; color: black; font-size: 24px;">
+                    Nenhum participante respondeu ao Questionário
+                </div>
             {% endif %}
-       
         </div>
     </div>
 </div>
@@ -80,7 +77,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.3.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.13/jspdf.plugin.autotable.min.js"></script>
-
 <script>
     var app = new Vue({
         delimiters: ["[[", "]]"],
@@ -120,30 +116,16 @@
             criarGraficodeBarras(id, dados, labels, colors) {
                 var name = "chart" + id;
                 var ctx = document.getElementById(name).getContext('2d');
-            
-                // Filtrar dados, labels e cores para remover elementos com dados igual a 0
-                let filteredData = [];
-                let filteredLabels = [];
-                let filteredColors = [];
-            
-                dados.forEach((data, index) => {
-                    if (data > 0) { // Só adiciona se o dado for maior que 0
-                        filteredData.push(data);
-                        filteredLabels.push(labels[index]);
-                        filteredColors.push(colors[index]);
-                    }
-                });
-            
                 var myChart = new Chart(ctx, {
                     plugins: [ChartDataLabels],
                     type: 'pie',
                     data: {
-                        labels: filteredLabels,
+                        labels: labels,
                         datasets: [{
                             label: "Selecionaram",
-                            data: filteredData,
-                            backgroundColor: filteredColors,
-                            borderColor: filteredColors.map(color => color.replace('0.2', '1')),
+                            data: dados,
+                            backgroundColor: colors,
+                            borderColor: colors.map(color => color.replace('0.2', '1')),
                             borderWidth: 2,
                         }]
                     },
@@ -160,6 +142,9 @@
                                     size: 25
                                 },
                                 formatter: (value, ctx) => {
+                                    if (value === 0) {
+                                        return ''; // Não mostra a etiqueta para valores 0%
+                                    }
                                     let sum = ctx.dataset.data.reduce((a, b) => a + b, 0);
                                     let percentage = (value / sum * 100).toFixed(2) + "%";
                                     return percentage;
@@ -169,15 +154,14 @@
                         maintainAspectRatio: false
                     }
                 });
-            }
-            ,
+            },
+            
             exportarPDF() {
                 var doc = new jspdf.jsPDF();
                 var nome_questionario = "Questionario: " + "{{ nome_questionario }}";
                 var tema_questionario = "Tema: Almoço";
                 var data_publicada = "Data de Publicação: " + "{{ data_publicacao }}";
                 var data_expiracao = "Data de Expiração: " + "{{ data_expiracao }}";
-                // Posição inicial do PDF
                 var y = 20;
                 doc.text(10, 10, nome_questionario);
                 doc.text(10, y, tema_questionario);
@@ -188,7 +172,6 @@
                 y += 10;
                 var pageWidth = doc.internal.pageSize.getWidth();
                 var imgWidth = 150;
-                // Iterar sobre cada gráfico
                 for (let i = 0; i < this.respostas.length; i++) {
                     if (y > 150) {
                         doc.addPage();
@@ -198,7 +181,7 @@
                     doc.text(20, y, txt);
                     y += 10;
                     var imgData = document.getElementById('chart' + i).toDataURL('image/png');
-                    var x = (pageWidth - imgWidth) / 2; // Calcular a posição horizontal para centralizar a imagem
+                    var x = (pageWidth - imgWidth) / 2;
                     doc.addImage(imgData, 'PNG', x, y, imgWidth, 150);
                     y += 170;
                     var data = [];

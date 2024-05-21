@@ -24,6 +24,7 @@ urlpatterns = [
     path('estatistica_transporte/<int:diaabertoid>', views.estatistica_transporte, name='estatistica_transporte'),
     path('estatisticas/exportar_csv/<int:diaabertoid>/', views.exportar_estatisticas_csv, name='exportar_estatisticas_csv'),
     path('estatisticas_almocos/<int:diaabertoid>', views.estatisticas_almocos, name='estatisticas_almocos'),
+    path('estatisticas_almocos_csv/', views.estatisticas_almocos_csv, name='estatisticas_almocos_csv'),
 
     path('<int:inscricao_id>/presença', views.presençaInscricao, name='presença-inscricao'),
 

@@ -742,7 +742,10 @@ def inscricoes_por_dia(request, tema, ano):
     if tema == "almoco":
         dia_aberto = Diaaberto.objects.filter(ano=ano).first()
         if dia_aberto:
-            inscricoes = Inscricao.objects.filter(diaaberto_id=dia_aberto.id).values_list('dia', flat=True).distinct()
+            inscricoes = Inscricao.objects.filter(
+            diaaberto_id=dia_aberto.id,
+            inscricaoprato__isnull=False  # Este filtro garante que só consideremos as inscrições que têm pratos
+            ).values_list('dia', flat=True).distinct()
             return JsonResponse({'dias': list(inscricoes)}, safe=False)
     if tema == 'atividade':
         dia_aberto = Diaaberto.objects.filter(ano=ano).first()
