@@ -6,7 +6,10 @@ from configuracao.models import Horario
 from django.db.models import Max, Min
 from collections import OrderedDict
 from coordenadores.models import TarefaAcompanhar
-from atividades.models import Atividade
+from atividades.models import Atividade, Sessao
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 class Escola(models.Model):
     nome = models.CharField(max_length=200)
@@ -50,9 +53,13 @@ class Inscricao(models.Model):
     hora_chegada = models.TimeField(blank=True, null=True)
     local_chegada = models.CharField(max_length=200, blank=True, null=True)
     entrecampi = models.BooleanField(default=False)
+    presentes = models.IntegerField(default=0, validators=[
+        validators.MinValueValidator(0),
+        validators.MaxValueValidator(100)
+    ])
     codigo = models.CharField(max_length=20, unique=False, blank=True, null=True)
-    presentes = models.IntegerField(default=0)
     
+
 
     class Meta:
         db_table = 'Inscricao'
@@ -158,10 +165,8 @@ class Inscricao(models.Model):
 
 
 class Inscricaosessao(models.Model):
-    inscricao = models.ForeignKey(
-        Inscricao, models.CASCADE)
-    sessao = models.ForeignKey(
-        'atividades.Sessao', models.CASCADE)
+    inscricao = models.ForeignKey(Inscricao, models.CASCADE)
+    sessao = models.ForeignKey('atividades.Sessao', models.CASCADE)
     nparticipantes = models.IntegerField(
         validators=[
             validators.MinValueValidator(1),
@@ -169,11 +174,11 @@ class Inscricaosessao(models.Model):
         ]
     )
 
-
     class Meta:
         db_table = 'InscricaoSessao'
         unique_together = (('inscricao', 'sessao'),)
         ordering = ['sessao__horarioid__inicio']
+
 
 
         
@@ -228,3 +233,57 @@ class Inscricaotransporte(models.Model):
     class Meta:
         db_table = 'InscricaoTransporte'
         unique_together = (('inscricao', 'transporte'),)
+
+
+
+
+class OpUltimaHora(models.Model):
+    responsavel = models.CharField(
+        max_length=200, 
+        verbose_name="Responsável",
+        default='',
+        null=True,
+        blank=True
+    )
+    numero_individuos = models.IntegerField(
+        validators=[
+            validators.MinValueValidator(1),
+            validators.MaxValueValidator(100)
+        ],
+        verbose_name="Número de Indivíduos",
+        default=1  
+    )
+    escola = models.CharField(  
+        max_length=200, 
+        verbose_name="Escola"
+    )
+    ano = models.IntegerField(
+        validators=[
+            validators.MinValueValidator(5),
+            validators.MaxValueValidator(12)
+        ],
+        verbose_name="Ano",
+        default=5  
+    )
+    campus = models.CharField(
+        max_length=40,
+        choices=[
+            ('Gambelas', 'Gambelas'),
+            ('Penha', 'Penha'),
+            ('Portimão', 'Portimão')
+        ],
+        verbose_name="Campus",
+        default='Gambelas'  
+    )
+    sessao = models.ForeignKey(
+        Sessao, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Sessão"
+    )
+
+    class Meta:
+        db_table = 'OpUltimaHora'
+        verbose_name = "Inscrição de Última Hora"
+        verbose_name_plural = "Inscrições de Última Hora"
+
+    def __str__(self):
+        return f"{self.escola} - {self.responsavel} - {self.campus}"
+

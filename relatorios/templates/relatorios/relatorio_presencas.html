@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+{% load static %}
+{% load inscricoes_extras %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscrição no Dia Aberto {{ano}} - Universidade do Algarve</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+
+            @frame footer_frame {
+                /* Static frame */
+                -pdf-frame-content: footer_content;
+                left: 50pt;
+                width: 512pt;
+                top: 772pt;
+                height: 20pt;
+            }
+        }
+        
+        .body-page {
+            page-break-after: always;
+        }
+        
+        .last-page {
+            page-break-after: avoid;
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .page-header img {
+            height: 100px;
+        }
+
+        .section-header {
+            text-align: center;
+            padding: 3px;
+            padding-top: 10px;
+            background-color: #eee;
+            border: 1px solid #000;
+            font-weight: bold;
+        }
+
+        .responsaveis-table {
+            width: 100%;
+            max-width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .responsaveis-table td {
+            padding: 3px;
+            padding-top: 2px;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-bottom: 1px solid #000;
+            text-align: center;
+        }
+
+        .responsaveis-table thead th {
+            padding-left: 6px;
+            padding-top: 4px;
+            vertical-align: bottom;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-top: 1px solid #000;
+            text-align: left;
+        }
+
+        .presences-table {
+            width: 100%;
+            max-width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .presences-table td {
+            padding: 3px;
+            padding-top: 6px;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-bottom: 1px solid #000;
+            text-align: center;
+        }
+
+        .presences-table thead th {
+            padding-top: 4px;
+            vertical-align: bottom;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-top: 1px solid #000;
+            background-color: #eee
+        }
+
+        .escola-table {
+            width: 100%;
+            max-width: 100%;
+            {% if inscricao.individual %}margin-bottom: 15px;{% endif %}
+        }
+
+        .escola-table td {
+            padding: 3px;
+            padding-top: 6px;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-bottom: 1px solid #000;
+            text-align: center;
+        }
+
+        .escola-table thead th {
+            padding-top: 4px;
+            vertical-align: bottom;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-top: 1px solid #000;
+            background-color: #eee
+        }
+
+        .turma-table {
+            width: 100%;
+            max-width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .turma-table td {
+            padding: 3px;
+            padding-top: 6px;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-bottom: 1px solid #000;
+            text-align: center;
+        }
+
+        .turma-table thead th {
+            padding-top: 4px;
+            vertical-align: bottom;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            border-top: 1px solid #000;
+            background-color: #eee
+        }
+
+        .sessoes-table {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .sessoes-table th,
+        .sessoes-table td {
+            padding: 3px;
+            padding-top: 6px;
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            text-align: center;
+        }
+
+        .sessoes-table thead th {
+            vertical-align: bottom;
+            border-bottom: 1.2px solid #000;
+            background-color: #eee
+        }
+
+        .has-text-centered {
+            text-align: center;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div id="footer_content">Dia Aberto da UAlg {{ano}} - página
+        <pdf:pagenumber> de <pdf:pagecount>
+    </div>
+
+    {% for day_context in days_context %}
+        {% if forloop.last %}
+            <div class="last-body-page">
+                <div class="page-header">
+                    <img src="{{ logo_url }}" alt="UAlg Logo">
+                    <img src="{{ logo_url2 }}" alt="Dia Aberto Logo">
+                    <h1>Dia Aberto {{ ano }} - Universidade do Algarve</h1>
+                </div>
+                <div class="section-header">Relatório do Dia {{ day_context.day }}</div>
+                <table class="presences-table">
+                    <thead>
+                        <tr>
+                            <th>Escola</th>
+                            <th>Ano</th>
+                            <th>Turma</th>
+                            <th>Hora Chegada</th>
+                            <th>Nº de Inscrições</th>
+                            <th>Nº de Presentes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inscricao in day_context.inscricoes %}
+                        <tr>
+                            <td>{{ inscricao.escola.nome }}</td>
+                            <td>{{ inscricao.ano }}</td>
+                            <td>{{ inscricao.turma }}</td>
+                            <td>{{ inscricao.hora_chegada }}</td>
+                            <td>{{ inscricao.nalunos }}</td>
+                            <td>{{ inscricao.presentes }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <br>
+                <p>Total de Inscrições de {{ day_context.day }}: {{ day_context.total_nalunos }}</p>
+                <p>Total de Presenças de {{ day_context.day }}: {{ day_context.total_presentes }}</p>
+            </div>
+        {% else %}
+            <div class="body-page">
+                <div class="page-header">
+                    <img src="{{ logo_url }}" alt="UAlg Logo">
+                    <img src="{{ logo_url2 }}" alt="Dia Aberto Logo">
+                    <h1>Dia Aberto {{ ano }} - Universidade do Algarve</h1>
+                </div>
+                <div class="section-header">Relatório do Dia {{ day_context.day }}</div>
+                <table class="presences-table">
+                    <thead>
+                        <tr>
+                            <th>Escola</th>
+                            <th>Ano</th>
+                            <th>Turma</th>
+                            <th>Hora Chegada</th>
+                            <th>Nº de Inscrições</th>
+                            <th>Nº de Presentes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inscricao in day_context.inscricoes %}
+                        <tr>
+                            <td>{{ inscricao.escola.nome }}</td>
+                            <td>{{ inscricao.ano }}</td>
+                            <td>{{ inscricao.turma }}</td>
+                            <td>{{ inscricao.hora_chegada }}</td>
+                            <td>{{ inscricao.nalunos }}</td>
+                            <td>{{ inscricao.presentes }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <br>
+                <p>Total de Inscrições de {{ day_context.day }}: {{ day_context.total_nalunos }}</p>
+                <p>Total de Presenças de {{ day_context.day }}: {{ day_context.total_presentes }}</p>
+            </div>
+        {% endif %}
+    {% endfor %}
+    
+</body>
+</html>

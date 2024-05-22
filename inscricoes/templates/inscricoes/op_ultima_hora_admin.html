@@ -1,0 +1,99 @@
+{% extends 'app.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    .op-ultima-hora-table th, .op-ultima-hora-table td {
+        width: 1/6th; 
+        text-align: center; 
+    }
+    .action-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    .action-buttons form, .action-buttons a {
+        margin: 0;
+    }
+</style>
+
+<div class="container">
+    <div class="section">
+        <h1 class="title">Inscrições de Última Hora</h1>
+        <a href="{% url 'inscricoes:op-ultima-hora-create' %}" class="button is-primary">
+            <span class="icon"><i class="fas fa-plus"></i></span>
+            <span>Nova Inscrição</span>
+        </a>
+        <div class="box">
+            <table class="table is-fullwidth is-striped op-ultima-hora-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Responsável</th>
+                        <th>Nº Presentes</th>
+                        <th>Escola</th>
+                        <th>Ano Escolar</th>
+                        <th>Campus</th>
+                        <th>Horário Sessão</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for signup in op_ultima_hora_signups %}
+                    <tr>
+                        <td>{{ signup.id }}</td>
+                        <td>{{ signup.responsavel }}</td>
+                        <td>{{ signup.numero_individuos }}</td>
+                        <td>{{ signup.escola }}</td>
+                        <td>{{ signup.ano }}</td>
+                        <td>{{ signup.get_campus_display }}</td>
+                        <td>
+                            {% if signup.sessao %}
+                                {{ signup.sessao.horarioid.inicio|date:"H:i" }} - {{ signup.sessao.horarioid.fim|date:"H:i" }}
+                            {% else %}
+                                --
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <form method="post" action="{% url 'inscricoes:op-ultima-hora-delete' signup.id %}" class="delete-form">
+                                    {% csrf_token %}
+                                    <button type="submit" class="button is-small is-danger delete-button">
+                                        <span class="icon is-small"><i class="fas fa-trash"></i></span>
+                                    </button>
+                                </form>
+                                <a href="{% url 'inscricoes:op-ultima-hora-edit' signup.id %}" class="button is-small is-info">
+                                    <span class="icon is-small"><i class="fas fa-edit"></i></span>
+                                </a>
+                                <a href="{% url 'inscricoes:op-ultima-hora-pdf' signup.id %}" class="button is-small is-link">
+                                    <span class="icon is-small"><i class="fas fa-file-pdf"></i></span>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7">Nenhuma inscrição de última hora encontrada.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const deleteForms = document.querySelectorAll('.delete-form');
+        deleteForms.forEach(form => {
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const confirmDelete = confirm('Tem a certeza que pretende apagar o registo?');
+                if (confirmDelete) {
+                    form.submit();
+                }
+            });
+        });
+    });
+</script>
+{% endblock content %}

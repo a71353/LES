@@ -34,6 +34,10 @@ class RelatorioTable(tables.Table):
             export_url = reverse('relatorios:relatorio_atividade', kwargs={'ano': record.dia_aberto.ano,'rep': 'no'})
         elif tema == "atividade" and tipo == 'csv':
             export_url = reverse('relatorios:relatorio_atividade_csv', kwargs={'ano': record.dia_aberto.ano, 'rep': 'no'})
+        elif tema == "presencas" and tipo == 'pdf':
+            export_url = reverse('relatorios:relatorio_presencas', kwargs={'ano': record.dia_aberto.ano, 'rep': 'no'})
+        elif tema == "presencas" and tipo == 'csv':
+            export_url = reverse('relatorios:relatorio_presencas_csv', kwargs={'ano': record.dia_aberto.ano, 'rep': 'no'})
         elif tema == "almoco" and tipo == 'pdf':
             export_url = reverse('relatorios:relatorio_almoco_pdf', kwargs={'ano': record.dia_aberto.ano,'rep': 'no'})
         elif tema == "almoco" and tipo == 'csv':

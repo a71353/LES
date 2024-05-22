@@ -18,6 +18,13 @@ urlpatterns = [
     path('alterar/<int:pk>', views.ConsultarInscricao.as_view(), {'alterar': True},'alterar-inscricao'),
     path('alterar/<int:pk>/<int:step>', views.ConsultarInscricao.as_view(), {'alterar': True}, 'alterar-inscricao'),
     path('apagar/<int:pk>', views.ApagarInscricao, name='apagar-inscricao'),
+
+    path('op-ultima-hora-admin/', views.op_ultima_hora_admin, name='op-ultima-hora-admin'),
+    path('op-ultima-hora/create/', views.op_ultima_hora_create, name='op-ultima-hora-create'),
+    path('op-ultima-hora-delete/<int:pk>/', views.op_ultima_hora_delete, name='op-ultima-hora-delete'),
+    path('op-ultima-hora/edit/<int:pk>/', views.op_ultima_hora_edit, name='op-ultima-hora-edit'),
+    path('presentes/<int:pk>/', views.presentes, name='inscricao-presentes'),
+    
     path('estatisticas', views.estatisticas, name='estatisticas'),
     path('estatisticas/<int:diaabertoid>', views.estatisticas, name='estatisticas'),
     path('tipo_estatistica', views.tipo_estatistica, name='tipo_estatistica'),
@@ -34,4 +41,6 @@ urlpatterns = [
     path('estatisticaporroteiro/<int:roteiroid>/', views.estatisticaporRoteiro, name='estatisticaporroteiro'),
     path('estatisticaAtividade/<int:diaabertoid>', views.estatisticaAtividade,name='estatisticasAtividade'),
 
+    path('estatisticas_dia_aberto/<int:diaabertoid>', views.estatisticas_diaAberto, name='estatisticas_dia_aberto'),
+    path('op-ultima-hora/<int:pk>/pdf/', views.op_ultima_hora_pdf, name='op-ultima-hora-pdf'),
 ]

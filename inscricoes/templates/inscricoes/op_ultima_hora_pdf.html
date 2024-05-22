@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+{% load static %}
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscrição de Última Hora - Universidade do Algarve</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+
+        .section-header {
+            text-align: center;
+            padding: 3px;
+            padding-top: 10px;
+            background-color: #eee;
+            border: 1px solid #000;
+            font-weight: bold;
+        }
+
+        .table {
+            width: 100%;
+            max-width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .table td, .table th {
+            padding: 3px;
+            padding-top: 2px;
+            border: 1px solid #000;
+            text-align: center;
+        }
+
+        .table thead th {
+            padding-top: 4px;
+            vertical-align: bottom;
+            background-color: #eee;
+        }
+
+        .has-text-centered {
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    
+    <img src="{{ 'img/ualg-logo.png'}}" alt="Ualg Logo" height="100">
+    <img class="has-text-centered" src="{{ 'img/logo-large.png'}}" alt="Dia Aberto Logo" height="100">
+    <pdf:spacer height="20px" />
+    <h1 class="has-text-centered">Inscrição de Última Hora - Universidade do Algarve</h1>
+
+    <!-- TABELA RESPONSÁVEL -->
+    <div class="section-header">RESPONSÁVEL</div>
+    <table class="table">
+        <tbody>
+            <tr>
+                <td>{{inscricao.responsavel}}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- TABELA INFORMAÇÃO DA INSCRIÇÃO -->
+    <div class="section-header">INFORMAÇÃO DA INSCRIÇÃO</div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Número de Presenças</th>
+                <th>Escola</th>
+                <th>Ano Escolar</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{inscricao.numero_individuos}}</td>
+                <td>{{inscricao.escola}}</td>
+                <td>{{inscricao.ano}}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- TABELA INFORMAÇÃO DA SESSÃO -->
+    <div class="section-header">INFORMAÇÃO DA SESSÃO</div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Campus</th>
+                <th>Horário</th>
+                <th>Atividade</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if inscricao.sessao %}
+            <tr>
+                <td>{{inscricao.get_campus_display}}</td>
+                <td>{{inscricao.sessao.horarioid.inicio}} - {{inscricao.sessao.horarioid.fim}}</td>
+                <td>{{inscricao.sessao.atividadeid.nome}}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="3">Sem sessão associada</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</body>
+
+</html>

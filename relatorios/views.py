@@ -524,6 +524,90 @@ def populate_csv(writer, inscricoes):
                 atividade.participantesmaximo
             ])
 
+
+def relatorio_presencas(request, ano=None, rep=None):
+    try:
+        dia_aberto = Diaaberto.objects.get(ano=ano)
+    except Diaaberto.DoesNotExist:
+        return redirect('utilizadores:mensagem2', 20)
+    
+    inscricoes_presenca = Inscricao.objects.filter(
+        diaaberto=dia_aberto
+    ).select_related('escola').order_by('dia', 'escola', 'ano', 'turma')
+
+    if not inscricoes_presenca.exists():
+        return redirect('utilizadores:mensagem2', 20)
+    
+    # Grouping inscricoes by day
+    inscricoes_grouped_by_day = {}
+    for inscricao in inscricoes_presenca:
+        day = inscricao.dia
+        if day not in inscricoes_grouped_by_day:
+            inscricoes_grouped_by_day[day] = []
+        inscricoes_grouped_by_day[day].append(inscricao)
+
+    # Creating a context for each day
+    context_by_day = []
+    for day, inscricoes_list in inscricoes_grouped_by_day.items():
+        context_by_day.append({
+            'day': day,
+            'inscricoes': inscricoes_list,
+            'total_nalunos': sum(i.nalunos for i in inscricoes_list),
+            'total_presentes': sum(i.presentes for i in inscricoes_list),
+        })
+
+    context = {
+        'ano': ano,
+        'days_context': context_by_day,
+    }
+
+    filename = f"presencas_dia_aberto_{ano}.pdf"
+    if rep == 'yes':
+        # Salvar o PDF internamente e retorná-lo
+        return render_pdf(request, "relatorios/relatorio_presencas.html", context, filename, save_file=True)
+    else:
+        # Apenas gerar o PDF para visualização, sem salvar
+        return render_pdf(request, "relatorios/relatorio_presencas.html", context, filename)
+
+def relatorio_presencas_csv(request, ano=None, rep=None):
+    # Fetch the 'Diaaberto' instance for the given year
+    try:
+        dia_aberto = Diaaberto.objects.get(ano=ano)
+    except Diaaberto.DoesNotExist:
+        return HttpResponse(f"Não existe Dia Aberto para o ano {ano}.", status=404)
+    
+    # Fetch all 'Inscricao' instances for the 'Diaaberto'
+    inscricoes = Inscricao.objects.filter(diaaberto=dia_aberto).select_related('escola')
+
+    if not inscricoes.exists():
+        return HttpResponse(f"Não existem inscrições para o Dia Aberto do ano {ano}.", status=404)
+
+    if rep == 'yes':
+        create_report(request, dia_aberto, 'CSV', 'Presencas')
+
+    # Prepare the response object with the CSV header
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="presencas_dia_aberto_{ano}.csv"'
+    writer = csv.writer(response, delimiter=';')
+
+    # Write the header row to the CSV file
+    writer.writerow(['Escola', 'Dia','Ano Escolar', 'Turma', 'Hora de Chegada', 'Numero de Inscricoes', 'Numero de Presentes'])
+
+    # Iterate over inscricoes and write their data to the CSV
+    for inscricao in inscricoes:
+        writer.writerow([
+            inscricao.escola.nome,
+            inscricao.dia,
+            inscricao.ano,
+            inscricao.turma,
+            inscricao.hora_chegada,
+            inscricao.nalunos,
+            inscricao.presentes,
+        ])
+
+    # Return the response to be downloaded as a CSV file
+    return response
+
 def relatorio_view(request):
     if request.method == 'POST':
         # Processar o formulário enviado
@@ -557,6 +641,11 @@ def relatorio_view(request):
                     return HttpResponseRedirect(reverse('relatorios:relatorio_transporte_dia', kwargs={'ano': selected_year, 'rep': save_to_database, 'day': day}))
                 elif report_type == 'csv':
                     return HttpResponseRedirect(reverse('relatorios:relatorio_transporte_csv_dia', kwargs={'ano': selected_year, 'rep': save_to_database, 'day': day}))
+        elif tema == 'presencas':
+            if report_type == 'pdf':
+                return HttpResponseRedirect(reverse('relatorios:relatorio_presencas', kwargs={'ano': selected_year, 'rep': save_to_database}))
+            elif report_type == 'csv':
+                return HttpResponseRedirect(reverse('relatorios:relatorio_presencas_csv', kwargs={'ano': selected_year, 'rep': save_to_database}))
         elif tema == 'almoco':
             if day == 'todos':
                 if report_type == 'pdf':

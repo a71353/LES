@@ -92,9 +92,16 @@
       <a href="{% url 'atividades:atividadesAdmin' %}" class="navbar-item">
         Atividades
       </a>
-      <a href="{% url 'inscricoes:consultar-inscricoes-admin' %}" class="navbar-item">
-        Inscrições
-      </a>
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a href="{% url 'inscricoes:consultar-inscricoes-admin' %}" class="navbar-item">
+          Inscrições
+        </a>
+        <div class="navbar-dropdown">
+          <a href="{% url 'inscricoes:op-ultima-hora-admin' %}" class="navbar-item">
+            Operações Última Hora
+          </a>
+        </div>
+      </div>
       <a href="{% url 'questionarios:lista_questionarios' %}" class="navbar-item">
         Questionários
       </a>

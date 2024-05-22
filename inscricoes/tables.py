@@ -14,12 +14,12 @@ class InscricoesTable(tables.Table):
     nalunos = tables.Column(verbose_name='Qtd', attrs={"th": {"width": "48"}})
     acoes = tables.Column('Ações', empty_values=(), orderable=False, attrs={"th": {"width": "150"}})
     turma = tables.Column(empty_values=())
-    presentes = tables.Column(verbose_name='Presentes', attrs={"th": {"width": "100"}, "td": {"style": "white-space: nowrap;"}})
+    #presentes = tables.Column(verbose_name='Presentes', attrs={"th": {"width": "100"}, "td": {"style": "white-space: nowrap;"}})
 
     class Meta:
         model = Inscricao
         sequence = ('grupo', 'dia', 'horario', 'escola', 'areacientifica',
-                    'turma', 'nalunos', 'presentes', 'acoes')
+                    'turma', 'nalunos', 'acoes', 'presentes')
 
     def render_presentes(self, value):
         if value == 0:
@@ -95,3 +95,16 @@ class InscricoesTable(tables.Table):
                 {botao3}
             </div>
         """)
+    
+    def render_presentes(self, record):
+        if record.presentes == 0:
+            return format_html(
+                "<span>0</span> <a href='{}' class='button is-small is-info'>Registar</a>",
+                reverse("inscricoes:inscricao-presentes", kwargs={"pk": record.pk})
+            )
+        else:
+            return format_html(
+                "<span>{}</span> <a href='{}' class='button is-small is-primary'>Alterar</a>",
+                record.presentes,
+                reverse("inscricoes:inscricao-presentes", kwargs={"pk": record.pk})
+            )

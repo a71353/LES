@@ -7,9 +7,12 @@ from django.utils.translation import gettext as _
 import re
 from atividades.models import Sessao
 from django.core.exceptions import ValidationError
-from _datetime import date
 import pytz
 from datetime import datetime
+from datetime import date
+from .models import OpUltimaHora, Escola
+from utilizadores.models import Participante
+from django.forms import ModelChoiceField
 
 
 class InfoForm(forms.Form):
@@ -196,4 +199,42 @@ class SessoesForm(forms.Form):
             raise forms.ValidationError(
                 _("Deve inscrever-se, no mínimo, em uma sessão."))
         verificar_vagas(cleaned_data['sessoes'],
-                        cleaned_data.get('nalunos', 0), cleaned_data.get('dia'))
+                        cleaned_data.get('nalunos', 0), cleaned_data.get('dia')) 
+
+class OpUltimaHoraForm(forms.ModelForm):
+    escola = forms.CharField(required=True, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    responsavel = forms.CharField(required=True, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    sessao = ModelChoiceField(
+        queryset=Sessao.objects.all(),
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(OpUltimaHoraForm, self).__init__(*args, **kwargs)
+        self.fields['sessao'].label_from_instance = self.label_from_instance
+
+    def label_from_instance(self, obj):
+        return f"Atividade: {obj.atividadeid.nome} - Dia: {obj.dia.strftime('%d/%m/%Y')} - Horário Sessão: {obj.horarioid.inicio.strftime('%H:%M')} - {obj.horarioid.fim.strftime('%H:%M')}"
+
+
+    class Meta:
+        model = OpUltimaHora
+        fields = ['responsavel','numero_individuos', 'ano', 'campus', 'escola', 'sessao']
+        widgets = {
+            'numero_individuos': forms.NumberInput(attrs={'class': 'form-control'}),
+            'ano': forms.NumberInput(attrs={'class': 'form-control', 'min': 5, 'max': 12}),
+            'campus': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+class PresentesForm(forms.ModelForm):
+    class Meta:
+        model = models.Inscricao
+        fields = ['presentes']
+        widgets = {
+            'presentes': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
+        }
+    def __init__(self, *args, **kwargs):
+        super(PresentesForm, self).__init__(*args, **kwargs)
+        self.fields['presentes'].initial = 0
+
