@@ -1,0 +1,73 @@
+{% extends 'app.html' %}
+{% load static %}
+
+{% block load %}
+<link rel="stylesheet" href="{% static 'css/buefy.css' %}">
+<link rel="stylesheet" href="{% static 'css/bulma.css' %}">
+{% endblock load %}
+
+{% block scripts %}
+<script src="{% static 'js/vue.js' %}"></script>
+<script src="{% static 'js/buefy/components/field/index.min.js' %}"></script>
+<script src="{% static 'js/buefy/components/numberinput/index.min.js' %}"></script>
+
+<script>
+    new Vue({
+        el: '#vue-app',
+        data: {
+            presentes: {{ form.presentes.value|default_if_none:'0' }},
+            maxPresentes: {{ nalunos }},  // Utilizamos o valor de nalunos aqui
+        }
+    });
+</script>
+
+{% endblock scripts %}
+
+
+{% block content %}
+<div class="container">
+    <div class="section">
+        <div class="box">
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <h2 class="title is-4">Número de Presenças</h2>
+
+                <div id="vue-app" class="container">
+                    <div class = "column">
+                        <div class="field">
+                            <b-field label="Número de Presenças">
+                                <b-numberinput v-model="presentes" required controls-position="compact" min="1" :max="maxPresentes">
+                                </b-numberinput>
+                            </b-field>
+                            <input type="hidden" name="presentes" :value="presentes">
+                            {{ form.presentes.errors }}
+                        </div>                        
+                    </div>
+
+                    {% if form.errors %}
+                        <div class="notification is-danger">
+                            <button class="delete"></button>
+                            Por favor, corrija os erros abaixo.
+                        </div>
+                        {{ form.non_field_errors }}
+                        {{ form.errors }}
+                    {% endif %}
+                    
+                    <br>
+                    <div class = "column">
+                        <div class="field is-grouped">
+                            <div class="control">
+                                <button type="submit" class="button is-link">Submeter</button>
+                            </div>
+                            <div class="control">
+                                <a href="javascript:history.back()" class="button is-link is-light">Cancelar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

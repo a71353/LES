@@ -54,7 +54,7 @@
                     </button>
                 </div>
                 <div class="column is-6">
-                    <a class="button is-primary is-fullwidth" href="#">
+                    <a class="button is-primary is-fullwidth" onclick="irParaEstatisticaDiaAberto()">
                         <span class="icon">
                             <i class="fa fa-info-circle"></i>
                         </span>
@@ -88,6 +88,11 @@
     function irParaEstatisticaTransporte() {
         var diaAbertoId = document.getElementById('anoSelecionado').value;
         var baseUrl = 'estatistica_transporte/';
+        location.href = baseUrl + diaAbertoId;
+    }
+    function irParaEstatisticaDiaAberto() {
+        var diaAbertoId = document.getElementById('anoSelecionado').value;
+        var baseUrl = 'estatisticas_dia_aberto/';
         location.href = baseUrl + diaAbertoId;
     }
     function irParaEstatisticaAlmoco() {

@@ -1,0 +1,113 @@
+{% extends 'app.html' %}
+{% load static %}
+
+{% block load %}
+<link rel="stylesheet" href="{% static 'css/buefy.css' %}">
+<link rel="stylesheet" href="{% static 'css/bulma.css' %}">
+{% endblock load %}
+
+{% block scripts %}
+<script src="{% static 'js/vue.js' %}"></script>
+<script src="{% static 'js/buefy/components/field/index.min.js' %}"></script>
+<script src="{% static 'js/buefy/components/numberinput/index.min.js' %}"></script>
+
+<script>
+    new Vue({
+        el: '#vue-app',
+        data: {
+            numeroIndividuos: {{ form.numero_individuos.value|default_if_none:'1' }},
+            anoEscolar: {{ form.ano.value|default_if_none:'5' }}
+        }
+    });
+</script>
+
+{% endblock scripts %}
+
+
+{% block content %}
+<div class="container">
+    <div class="section">
+        <div class="box">
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <h2 class="title is-4">Inscrição de Última Hora</h2>
+
+                <div id="vue-app" class="container">
+                    <div class="column">
+                        <div class="field">
+                            <label for="id_responsavel" class="label">Responsável</label>
+                            <div class="control">{{ form.responsavel }}</div>
+                        </div>
+                    </div>
+
+                    <div class = "column">
+                        <div class="field">
+                            <b-field label="Número de Indivíduos">
+                                <b-numberinput v-model="numeroIndividuos" required controls-position="compact" min="1">
+                                </b-numberinput>
+                            </b-field>
+                            <input type="hidden" name="numero_individuos" :value="numeroIndividuos">
+                            {{ form.numero_individuos.errors }}
+                        </div>                        
+                    </div>
+
+                    <div class="column">
+                        <div class="field">
+                            <label for="id_escola" class="label">Escola</label>
+                            <div class="control is-clearfix">{{ form.escola }}</div>
+                        </div>
+                    </div>
+
+                    <div class="column">
+                        <div class="field">
+                            <b-field label="Ano Escolar">
+                                <b-numberinput class="is-fullwidth" v-model="anoEscolar" required controls-position="compact" min="5" max="12">
+                                </b-numberinput>
+                                
+                            </b-field>
+                            <input type="hidden" name="ano" :value="anoEscolar"> 
+                            {{ form.ano.errors }}
+                        </div>
+                    </div>
+                    
+                    <div class = "column">
+                        <div class="field">
+                            <label class="label" for="id_campus">Campus</label>
+                            {{ form.campus }}
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="field">
+                            <label class="label" for="id_sessao">Sessão</label>
+                            {{ form.sessao }}
+                        </div>
+                    </div>
+
+                    {% if form.errors %}
+                        <div class="notification is-danger">
+                            <button class="delete"></button>
+                            Por favor, corrija os erros abaixo.
+                        </div>
+                        {{ form.non_field_errors }}
+                        {{ form.errors }}
+                    {% endif %}
+                    
+                    <br>
+                    <div class = "column">
+                        <div class="field is-grouped">
+                            <div class="control">
+                                <button type="submit" class="button is-link">Submeter</button>
+                            </div>
+                            <div class="control">
+                                <a href="javascript:history.back()" class="button is-link is-light">Cancelar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+{% endblock content %}

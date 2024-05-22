@@ -19,6 +19,9 @@ urlpatterns = [
     path('relatorios/abrir/<str:filename>/', views.abrir_relatorio, name='abrir_relatorio'),
     path('relatorios/deletar/<str:filename>/', views.deletar_relatorio, name='deletar_relatorio'),
 
+    path('relatorio_presencas/<int:ano>/<str:rep>/', views.relatorio_presencas, name='relatorio_presencas'),
+    path('relatorio_presencas_csv/<int:ano>/<str:rep>/', views.relatorio_presencas_csv, name='relatorio_presencas_csv'),
+    
 
     path('relatorio_almoco_pdf/<int:ano>/<str:rep>/', views.relatorio_almoco_pdf, name='relatorio_almoco_pdf'),
     path('relatorio_almoco_csv/<int:ano>/<str:rep>/', views.relatorio_almoco_csv, name='relatorio_almoco_csv'),

@@ -1,10 +1,10 @@
 from django.shortcuts import get_object_or_404, redirect, render
-from inscricoes.models import Inscricao, Inscricaosessao, Responsavel, Inscricaotransporte
+from inscricoes.models import Inscricao, Inscricaosessao, Responsavel, Inscricaotransporte, OpUltimaHora, Escola
 from inscricoes.utils import add_vagas_sessao, enviar_mail_confirmacao_inscricao, init_form, nao_tem_permissoes, render_pdf, save_form, update_context, update_post
 from atividades.models import Atividade, Sessao, Tema, TemaQ
 from atividades.serializers import AtividadeSerializer
 from atividades.filters import AtividadeFilter
-from inscricoes.forms import AlmocoForm, InfoForm, InscricaoForm, ResponsavelForm, SessoesForm, TransporteForm
+from inscricoes.forms import AlmocoForm, InfoForm, InscricaoForm, ResponsavelForm, SessoesForm, TransporteForm, OpUltimaHoraForm, PresentesForm
 from roteiros.models import Roteiro
 from utilizadores.models import Administrador, Coordenador, Participante
 from questionariosPublicados.models import Resposta, Resposta_Individual
@@ -27,11 +27,23 @@ from datetime import datetime
 import pytz
 from configuracao.tests.test_models import create_open_day
 from _datetime import timedelta
-from django.http import HttpResponse
-from django.db.models import Count
+from django.http import HttpResponse, JsonResponse
+from django.db.models import Sum, Count, Q
+from django.contrib import messages
 import csv
 from questionarios.models import Questionario, Pergunta
 from collections import defaultdict
+
+
+def op_ultima_hora_pdf(request, pk):
+    inscricao = get_object_or_404(OpUltimaHora, pk=pk)
+    ano = inscricao.ano
+    context = {
+        'request': request,
+        'inscricao': inscricao,
+        'ano': ano,
+    }
+    return render_pdf("inscricoes/op_ultima_hora_pdf.html", context, f"dia_aberto_ualg_{ano}.pdf")
 
 
 def InscricaoPDF(request, pk):
@@ -342,6 +354,70 @@ def ApagarInscricao(request, pk):
     inscricao.delete()
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
+
+
+def op_ultima_hora_admin(request):
+    op_ultima_hora_signups = OpUltimaHora.objects.all()
+    return render(request, 'inscricoes/op_ultima_hora_admin.html', {'op_ultima_hora_signups': op_ultima_hora_signups})
+
+def op_ultima_hora_create(request):
+    if request.method == 'POST':
+        form = OpUltimaHoraForm(request.POST)
+        if form.is_valid():
+            escola_nome = form.cleaned_data['escola']
+            escola, created = Escola.objects.get_or_create(nome=escola_nome)
+
+
+            op_ultima_hora = form.save(commit=False)
+            op_ultima_hora.escola = escola
+            op_ultima_hora.save()
+            messages.success(request, 'Inscrição de última hora criada com sucesso!')
+            return redirect('inscricoes:op-ultima-hora-admin')  
+    else:
+        form = OpUltimaHoraForm()
+    
+    return render(request, 'inscricoes/op_ultima_hora_form.html', {'form': form})
+
+def op_ultima_hora_delete(request, pk):
+    signup = get_object_or_404(OpUltimaHora, pk=pk)
+    
+    signup.delete()
+    messages.success(request, 'Inscrição de última hora excluída com sucesso!')
+    return redirect('inscricoes:op-ultima-hora-admin')
+
+def op_ultima_hora_edit(request, pk):
+    signup = get_object_or_404(OpUltimaHora, pk=pk)
+    if request.method == 'POST':
+        form = OpUltimaHoraForm(request.POST, instance=signup)
+        if form.is_valid():
+            form.save()
+            return redirect('inscricoes:op-ultima-hora-admin')
+    else:
+        form = OpUltimaHoraForm(instance=signup)
+    return render(request, 'inscricoes/op_ultima_hora_form.html', {'form': form})
+
+def presentes(request, pk):
+    inscricao = get_object_or_404(Inscricao, pk=pk)
+
+    if request.method == 'POST':
+        form = PresentesForm(request.POST, instance=inscricao)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Número de presentes atualizado com sucesso!')
+            # Redirect to the inscricao detail page, or wherever is appropriate
+            return redirect('inscricoes:consultar-inscricoes-admin')
+        else:
+            # If the form is not valid, you will fall through to the render below and display the form with errors
+            messages.error(request, 'inscricoes/consultar_inscricoes_admin.html')
+    else:
+        # GET method, so create the form with the inscricao instance
+        form = PresentesForm(instance=inscricao)
+
+    return render(request, 'inscricoes/inscricao_presentes.html', {
+        'form': form,
+        'inscricao': inscricao,
+        'nalunos': inscricao.nalunos  # Aqui passamos o valor de nalunos
+    })
 
 def estatisticas(request, diaabertoid=None):
     """ View que mostra as estatísticas do Dia Aberto """
@@ -971,3 +1047,98 @@ def presençaInscricao(request,inscricao_id):
                     'inscricao': Inscricao.objects.get(id=inscricao_id),
                     'inscricaosessoes': Inscricaosessao.objects.all().filter(inscricao=inscricao_id),
                   })
+
+
+
+def estatisticas_diaAberto(request, diaabertoid=None):
+    """ View que mostra as estatísticas do Dia Aberto baseadas nas respostas ao questionário """
+    user_check_var = user_check(request=request, user_profile=[Administrador])
+    if not user_check_var.get('exists'):
+        return user_check_var.get('render')
+    
+    if diaabertoid is None:
+        diaaberto = Diaaberto.objects.filter(ano__lte=datetime.now().year).order_by('-ano').first()
+        
+        if diaaberto is None:
+            return render(request, 'mensagem.html', {
+                'tipo': 'error',
+                'm': 'Nao existe o dia aberto selecionado'
+            })
+    else:
+        try:
+            diaaberto = Diaaberto.objects.get(id=diaabertoid)
+        except Diaaberto.DoesNotExist:
+            return render(request, 'mensagem.html', {
+                'tipo': 'error',
+                'm': 'Nao existe o dia aberto selecionado'
+            })
+
+    if diaaberto.questionario_id is None:
+        return render(request, 'mensagem.html', {
+            'tipo': 'error',
+            'm': 'Nao existe nenhum questionario para esse dia aberto'
+        })
+
+    questionario = get_object_or_404(Questionario, id=diaaberto.questionario_id)
+   
+    tema_diaAberto = get_object_or_404(TemaQ, tema='Dia Aberto')
+    
+    if tema_diaAberto is None:
+        return render(request, 'mensagem.html', {
+            'tipo': 'error',
+            'm': 'Nao existe um tema de dia aberto definido'
+        })
+
+    inscricoes = Inscricao.objects.filter(diaaberto=diaaberto)
+    
+    if not inscricoes.exists():
+        return render(request, 'mensagem.html', {
+            'tipo': 'error',
+            'm': 'Nao existem inscrições para este dia aberto'
+        })
+
+    perguntas = Pergunta.objects.filter(questionario_id=questionario.id, tema=tema_diaAberto.id, tipo_resposta='multipla_escolha')
+    if not perguntas.exists():
+        return redirect('utilizadores:mensagem1', 19)
+    
+    resultados = []
+    for pergunta in perguntas:
+        respostas_individuais = Resposta_Individual.objects.filter(pergunta=pergunta)
+        opcoes = OpcaoP.objects.filter(pergunta=pergunta).in_bulk(field_name='id')
+
+        # Preparar dicionário para contar as respostas
+        contador_respostas = defaultdict(int)
+    
+        # Contar respostas recebidas, mapeando o id da opção para seu texto_opcao
+        for resposta in respostas_individuais:
+            id_opcao = resposta.resposta_texto
+            if pergunta.texto in ["Qual a sua idade?", "Nível de satisfação."]:
+                texto_opcao = id_opcao
+            else:
+                try:
+                    id_opcao = int(id_opcao)
+                    texto_opcao = opcoes[id_opcao].texto_opcao if id_opcao in opcoes else 'Opção não encontrada'
+                except ValueError:
+                    texto_opcao = id_opcao  # Se não for possível converter para int, use diretamente o texto
+            contador_respostas[texto_opcao] += 1
+
+        # Agora, preparar a lista de respostas agrupadas para inclusão nos resultados
+        respostas_agrupadas = [{'texto_opcao': texto_opcao, 'total': total} for texto_opcao, total in contador_respostas.items()]
+
+        resultados.append({
+            'pergunta': pergunta.texto,
+            'respostas': respostas_agrupadas,
+        })
+
+    numdays = (diaaberto.datadiaabertofim - diaaberto.datadiaabertoinicio).days + 1
+    dias = [(diaaberto.datadiaabertoinicio + timedelta(days=x)).strftime("%d/%m/%Y") for x in range(numdays)]
+
+    return render(request, 'inscricoes/estatisticaDiaAberto.html', {
+        'diaaberto': diaaberto,
+        'diasabertos': Diaaberto.objects.all(),
+        'dias': dias,
+        'questionario': questionario,
+        'resultados': resultados
+    })
+
+    

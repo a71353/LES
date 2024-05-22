@@ -1,0 +1,181 @@
+{% extends 'app.html' %}
+{% load static %}
+
+{% block title %}Estatísticas{% endblock %}
+
+{% block load %}
+<link rel="stylesheet" href="{% static 'css/Chart.min.css' %}">
+<link rel="stylesheet" href="{% static 'css/Chart.min.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+<style>
+    /* Estilos adicionais para o botão de exportação */
+    #export-pdf-button {
+        background-color: #ff2525; /* Cor de fundo vermelho */
+        color: rgb(0, 0, 0); /* Texto preto */
+        border: none; /* Sem borda */
+        padding: 10px 20px; /* Padding para tornar o botão maior */
+        border-radius: 5px; /* Bordas arredondadas */
+        cursor: pointer; /* Cursor do tipo ponteiro */
+        font-size: 16px; /* Tamanho da fonte */
+    }
+    #export-pdf-button:hover {
+        background-color: #fc2a2a; /* Cor mais escura ao passar o mouse */
+    }
+    #export-csv-button {
+        background-color: #4CAF50; /* Cor de fundo verde */
+        color: white; /* Texto branco */
+        border: none; /* Sem borda */
+        padding: 10px 20px; /* Padding para tornar o botão maior */
+        border-radius: 5px; /* Bordas arredondadas */
+        cursor: pointer; /* Cursor do tipo ponteiro */
+        font-size: 16px; /* Tamanho da fonte */
+        text-align: center;
+        text-decoration: none; /* Remove underline de links */
+        display: inline-block; /* Garante que padding e height são respeitados */
+    }
+    #export-csv-button:hover {
+        background-color: #45a049; /* Cor mais escura ao passar o mouse */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div>
+    <h2>Resultados do Questionário</h2>
+    <div class="columns is-multiline">
+        {% for resultado in resultados %}
+            <div class="column is-half">
+                <div style="padding: 3rem 2vw 1rem;">
+                    <canvas id="chart-{{ forloop.counter }}"></canvas>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    <button id="export-pdf-button"><i class="fas fa-download"></i> Exportar Resultados para PDF</button>
+    <a href="{% url 'inscricoes:exportar_estatisticas_csv' diaaberto.id %}" class="button" id="export-csv-button"><i class="fas fa-download"></i> Exportar para CSV</a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/Chart.min.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"
+            integrity="sha512-JPcRR8yFa8mmCsfrw4TNte1ZvF1e3+1SdGMslZvmrzDYxS69J7J49vkFL8u6u8PlPJK+H3voElBtUCzaXj+6ig=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var colorSets = [
+        ['rgba(204, 67, 54, 0.8)', 'rgba(205, 205, 100, 0.8)', 'rgba(76, 175, 80, 0.8)', 'rgba(33, 150, 243, 0.8)', 'rgba(156, 39, 176, 0.8)', 'rgba(255, 87, 34, 0.8)'],
+        ['rgba(3, 169, 244, 0.8)', 'rgba(0, 150, 136, 0.8)', 'rgba(139, 195, 74, 0.8)', 'rgba(205, 220, 57, 0.8)', 'rgba(121, 85, 72, 0.8)', 'rgba(158, 158, 158, 0.8)'],
+        ['rgba(255, 152, 0, 0.8)', 'rgba(103, 58, 183, 0.8)', 'rgba(233, 30, 99, 0.8)', 'rgba(63, 81, 181, 0.8)', 'rgba(96, 125, 139, 0.8)', 'rgba(255, 204, 188, 0.8)'],
+        ['rgba(178, 235, 242, 0.8)', 'rgba(197, 202, 233, 0.8)', 'rgba(244, 143, 177, 0.8)', 'rgba(255, 138, 101, 0.8)', 'rgba(159, 168, 218, 0.8)', 'rgba(129, 199, 132, 0.8)']
+    ];
+
+    {% for resultado in resultados %}
+        var ctx = document.getElementById('chart-{{ forloop.counter }}').getContext('2d');
+        var dataValues = [{% for resposta in resultado.respostas %}{{ resposta.total }}, {% endfor %}];
+        var labels = [{% for resposta in resultado.respostas %}"{{ resposta.texto_opcao }}", {% endfor %}];
+        var colorSetIndex = ({{ forloop.counter0 }} % colorSets.length);
+        var chart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '{{ resultado.pergunta }}',
+                    data: dataValues,
+                    backgroundColor: colorSets[colorSetIndex],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                legend: {
+                    position: 'left',
+                    onClick: function (e, legendItem, legend) {}
+                },
+                plugins: {
+                    outlabels: {
+                        text: '%p',
+                        color: 'white',
+                        stretch: 20,
+                        font: {
+                            resizable: false,
+                            minSize: 10,
+                            maxSize: 18
+                        },
+                    },
+                },
+                title: {
+                    display: true,
+                    text: '{{ resultado.pergunta }}'
+                },
+                tooltips: {
+                    enabled: true,
+                    mode: 'index',
+                    callbacks: {
+                        label: function(tooltipItem, data) {
+                            var value = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
+                            var total = data.datasets[tooltipItem.datasetIndex].data.reduce((a, b) => a + b, 0);
+                            var percentage = ((value / total) * 100).toFixed(2);
+                            return data.labels[tooltipItem.index] + ': ' + value + ' (' + percentage + '%)';
+                        }
+                    }
+                },
+                hover: {
+                    mode: null
+                },
+                layout: {
+                    padding: {
+                        left: 30,
+                        right: 30,
+                        top: 30,
+                        bottom: 30
+                    }
+                },
+            },
+        });
+    {% endfor %}
+});
+
+document.getElementById('export-pdf-button').addEventListener('click', function() {
+    exportChartsToPDF();
+});
+
+function exportChartsToPDF() {
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF();
+    
+
+    var tituloDocumento = 'Resultados estatísticos do Questionário sobre o Dia Aberto';
+    var anoDiaAberto = {{ diaaberto.ano }};
+
+    doc.setFontSize(15);
+    doc.text(tituloDocumento, 105, 20, { align: 'center' });
+    doc.setFontSize(18);
+    doc.text('Ano do Dia Aberto: ' + anoDiaAberto, 105, 30, { align: 'center' });
+
+    var pdfWidth = 210;
+    var pdfHeight = 297;
+    var scaleFactor = 4;
+    var yOffset = 40;
+
+    {% for resultado in resultados %}
+        var canvas = document.getElementById('chart-{{ forloop.counter }}');
+        var imgData = canvas.toDataURL('image/png');
+        var pdfChartWidth = canvas.width / scaleFactor;
+        var pdfChartHeight = canvas.height / scaleFactor;
+
+        doc.addImage(imgData, 'PNG', 10, yOffset, pdfChartWidth, pdfChartHeight);
+        yOffset += pdfChartHeight + 10;
+
+        if ({{ forloop.counter }} % 2 === 0 && {{ forloop.counter }} !== {{ resultados|length }}) {
+            doc.addPage();
+            yOffset = 40;
+        }
+    {% endfor %}
+
+    doc.save('Resultados_Dia_Aberto_' + anoDiaAberto + '.pdf');
+}
+</script>
+{% endblock %}
