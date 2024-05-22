@@ -63,9 +63,7 @@
       <a href="{% url 'utilizadores:consultar-utilizadores' %}" class="navbar-item">
         Utilizadores
       </a>
-      <a href="{% url 'roteiros:criarRoteiro' %}" class="navbar-item">
-        Roteiros
-      </a>
+      
 
 
       {% elif request.user|has_group:'Administrador'%}

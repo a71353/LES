@@ -1187,14 +1187,6 @@ def mensagem(request, id, *args, **kwargs):
         m = "O utilizador não possui permissões para publicar um questionario"
         tipo = "error"
     
-    
-    elif id == 4000:
-        m = "O ano selecionado não possui Questionário"
-        tipo = "error"
-    elif id == 4001:
-        m = "O Questionário referente a esse ano ainda não foi respondido"
-        tipo = "info"
-
     #Questionarios
     elif id == 7000:
         m = "O Utilizador não possui permissoões para consultar um questionario"
@@ -1289,6 +1281,13 @@ def mensagem(request, id, *args, **kwargs):
     elif id == 9001:
         m = "O Utilizador não possui permissões para exportar em csv as Estatisticas de almocos"
         tipo = "error"
+    elif id == 9002:
+        m = "O ano selecionado não possui Questionário"
+        tipo = "error"
+    elif id == 9003:
+        m = "O Questionário referente a esse ano ainda não foi respondido"
+        tipo = "info"
+
 
     else:
         m = "Esta pagina não existe"

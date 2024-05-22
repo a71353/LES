@@ -35,7 +35,7 @@ def estatisticas_almocos(request):
                 if diaaberto.questionario == None: #n tÊm questionarios associados
                     respostas= "No"
                     print(respostas)
-                    return redirect('utilizadores:mensagem', 4000)
+                    return redirect('utilizadores:mensagem', 9002)
                 else:
                     nome_questionario = diaaberto.questionario.nome
                     questionarioId = diaaberto.questionario.id
@@ -53,7 +53,7 @@ def estatisticas_almocos(request):
                         get_respostas = Resposta.objects.filter(questionario=questionarioId).all()
                         if get_respostas.count() == 0: # n há respostas
                             respostas= "False"
-                            return redirect('utilizadores:mensagem', 4001)
+                            return redirect('utilizadores:mensagem', 9003)
                         else: #Calcular o numero de respostas
                             respostas= "True"
                             participantes = get_respostas.count()                
