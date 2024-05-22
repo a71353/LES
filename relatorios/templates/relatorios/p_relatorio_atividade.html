@@ -238,6 +238,70 @@ document.querySelector('[name="year"]').addEventListener('change', updateDays);
 document.querySelector('[name="theme"]').addEventListener('change', updateDays);
 */
 
+document.querySelector('[name="theme"]').addEventListener('change', function() {
+    const tema = this.value;
+    const yearSelect = document.querySelector('[name="year"]');
+    yearSelect.innerHTML = ''; // Limpa as opções existentes
+
+    // Adiciona a opção padrão para 'Selecione o ano'
+    const defaultOption = document.createElement('option');
+    defaultOption.textContent = 'Selecione o ano';
+    defaultOption.value = '';
+    yearSelect.appendChild(defaultOption);
+    yearSelect.selectedIndex = 0; // Define como selecionado o prompt de seleção
+
+    if (tema === 'almoco') {
+        fetch('/relatorios/get_anos_disponiveis_almocos/') // Ajuste o URL conforme necessário
+            .then(response => response.json())
+            .then(data => {
+                if (data.length > 0) {
+                    data.forEach(year => {
+                        const option = document.createElement('option');
+                        option.value = year;
+                        option.textContent = year;
+                        yearSelect.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao buscar anos:', error);
+                Swal.fire({
+                    title: 'Erro!',
+                    text: 'Não foi possível carregar os anos disponíveis.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            });
+    } else {
+        // Aqui você pode carregar os anos de uma forma genérica ou para outros temas específicos
+        // Exemplo de código para carregar todos os anos disponíveis
+        fetch('/relatorios/get_all_years/') // Ajuste o URL conforme necessário
+            .then(response => response.json())
+            .then(data => {
+                if (data.length > 0) {
+                    data.forEach(year => {
+                        const option = document.createElement('option');
+                        option.value = year;
+                        option.textContent = year;
+                        yearSelect.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao buscar anos:', error);
+                Swal.fire({
+                    title: 'Erro!',
+                    text: 'Não foi possível carregar os anos disponíveis.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            });
+    }
+});
+
+
+
+
     
     
     

@@ -826,6 +826,90 @@ def relatorio_almoco_csv(request, ano=None, rep=None):
     response['Content-Disposition'] = f'attachment; filename="almocos_dia_aberto_{ano}.csv"'
     return response
 
+from openpyxl import Workbook
+from django.http import HttpResponse
+from collections import defaultdict
+import os
+
+def relatorio_almoco_csv2(request, ano=None, rep=None):
+    try:
+        dia_aberto = Diaaberto.objects.get(ano=ano)
+    except Diaaberto.DoesNotExist:
+        return redirect('utilizadores:mensagem', 8005)
+
+    inscricoes = Inscricao.objects.filter(diaaberto_id=dia_aberto.id).prefetch_related('escola', 'inscricaoprato_set')
+    if not inscricoes.exists():
+        return redirect('utilizadores:mensagem', 8006)
+
+    if not request.user.groups.filter(name="Administrador").exists():
+        return redirect('utilizadores:mensagem', 8010)
+
+    wb = Workbook()
+    wb.remove(wb.active)  # remove a aba padrão criada automaticamente
+
+    totais_gerais = defaultdict(int)
+
+    # Criar a aba "Total" primeiro para reorganizar depois
+    total_sheet = wb.create_sheet(title="Total")
+    total_sheet.append(['Nº Grupo', 'Escola', 'Ano/Turma', 'Local', 'Dia', 'Cantina Penha', 'Cantina Gambelas', 'Cantina Portimão'])
+
+    for inscricao in inscricoes:
+        ws = wb.create_sheet(title=f"{inscricao.dia}")
+        ws.append(['Nº Grupo', 'Escola', 'Ano/Turma', 'Local', 'Dia', 'Cantina Penha', 'Cantina Gambelas', 'Cantina Portimão'])
+
+        totais_por_campus = defaultdict(int)
+        escola = inscricao.escola.nome
+        ano_turma = f"{inscricao.ano}/{inscricao.turma if inscricao.turma else ''}"
+        local = inscricao.escola.local
+        dia = inscricao.dia
+
+        for prato in inscricao.inscricaoprato_set.all():
+            pratos_por_campus = defaultdict(int)
+            campus = prato.campus.nome
+            pratos_por_campus[campus] = prato.npratosalunos + prato.npratosdocentes
+            totais_por_campus[campus] += pratos_por_campus[campus]
+            totais_gerais[campus] += pratos_por_campus[campus]
+
+            line = [prato.id, escola, ano_turma, local, dia, 
+                    "---" if pratos_por_campus['Penha'] == 0 else pratos_por_campus['Penha'],
+                    "---" if pratos_por_campus['Gambelas'] == 0 else pratos_por_campus['Gambelas'],
+                    "---" if pratos_por_campus['Portimão'] == 0 else pratos_por_campus['Portimão']]
+
+            ws.append(line)
+            total_sheet.append(line)
+
+        # Adicionar os totais de cada campus no final da aba da inscrição
+        ws.append([
+            'Total', '---', '---', '---', '---',
+            totais_por_campus['Penha'],
+            totais_por_campus['Gambelas'],
+            totais_por_campus['Portimão']
+        ])
+
+    # Adicionar os totais gerais na aba 'Total'
+    total_sheet.append([
+        'Total Geral', '---', '---', '---', '---',
+        totais_gerais['Penha'],
+        totais_gerais['Gambelas'],
+        totais_gerais['Portimão']
+    ])
+
+    # Move the total sheet to the last position after all sheets are created
+    wb._sheets.append(wb._sheets.pop(wb._sheets.index(total_sheet)))
+
+    # Se a opção 'rep' for 'yes', salvar o arquivo internamente
+    if rep == 'yes':
+        file_path = os.path.join(RELATORIOS_DIR, f"almocos_dia_aberto_{ano}.xlsx")
+        wb.save(file_path)
+
+    # Preparar o arquivo para download
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="almocos_dia_aberto_{ano}.xlsx"'
+    wb.save(response)
+
+    return response
+
+
 
 def inscricoes_por_dia(request, tema, ano):
     if tema == "almoco":
@@ -966,11 +1050,83 @@ def relatorio_almoco_dia_csv(request, ano=None, rep=None, day=None):
     return response
 
 
+#novo
+def relatorio_almoco_dia_excel(request, ano=None, rep=None, day=None):
+    try:
+        dia_aberto = Diaaberto.objects.get(ano=ano)
+    except Diaaberto.DoesNotExist:
+        return redirect('utilizadores:mensagem', 8005)
+
+    if not request.user.groups.filter(name="Administrador").exists():
+        return redirect('utilizadores:mensagem', 8010)
+
+    # Filtra as inscrições por dia específico
+    inscricoes = Inscricao.objects.filter(diaaberto_id=dia_aberto.id, dia=day).prefetch_related('escola', 'inscricaoprato_set')
+    if not inscricoes.exists():
+        return redirect('utilizadores:mensagem', 8006)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Relatório de Almoços"
+
+    ws.append(['Nº Grupo', 'Escola', 'Ano/Turma', 'Local', 'Dia', 'Cantina Penha', 'Cantina Gambelas', 'Cantina Portimão'])
+    totais_por_campus = defaultdict(int)
+
+    for inscricao in inscricoes:
+        escola = inscricao.escola.nome
+        ano_turma = f"{inscricao.ano}/{inscricao.turma if inscricao.turma else ''}"
+        local = inscricao.escola.local
+
+        for prato in inscricao.inscricaoprato_set.all():
+            pratos_por_campus = defaultdict(int)
+            campus = prato.campus.nome
+            pratos_por_campus[campus] = prato.npratosalunos + prato.npratosdocentes
+            totais_por_campus[campus] += pratos_por_campus[campus]
+
+            ws.append([
+                prato.id,
+                escola,
+                ano_turma,
+                local,
+                day,
+                "---" if pratos_por_campus['Penha'] == 0 else pratos_por_campus['Penha'],
+                "---" if pratos_por_campus['Gambelas'] == 0 else pratos_por_campus['Gambelas'],
+                "---" if pratos_por_campus['Portimão'] == 0 else pratos_por_campus['Portimão']
+            ])
+
+    # Escrevendo os totais de cada campus para o dia
+    ws.append([
+        'Total', '---', '---', '---', '---',
+        totais_por_campus['Penha'],
+        totais_por_campus['Gambelas'],
+        totais_por_campus['Portimão']
+    ])
+
+    # Se a opção 'rep' for 'yes', salvar o arquivo internamente
+    if rep == 'yes':
+        filepath = os.path.join(RELATORIOS_DIR, f"almocos_dia_aberto_{ano}_{day}.xlsx")
+        wb.save(filepath)
+
+    # Preparar o arquivo para download
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="almocos_dia_aberto_{ano}_{day}.xlsx"'
+    wb.save(response)
+
+    return response
+
+
+
 def get_anos_disponiveis_almocos(request):
     # Buscar anos onde existem inscrições prato associadas ao tema "almoços"
     anos = Diaaberto.objects.filter(
         inscricao__inscricaoprato__isnull=False
     ).distinct().order_by('ano').values_list('ano', flat=True)
+
+    return JsonResponse(list(anos), safe=False)
+
+def get_all_years(request):
+    # Buscar anos onde existem inscrições prato associadas ao tema "almoços"
+    anos = Diaaberto.objects.all().order_by('ano').values_list('ano', flat=True).distinct()
 
     return JsonResponse(list(anos), safe=False)
 

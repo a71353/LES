@@ -32,6 +32,7 @@ urlpatterns = [
 
     path('inscricoes_por_dia/<str:tema>/<int:ano>/', views.inscricoes_por_dia, name='inscricoes_por_dia'),
     path('get_anos_disponiveis_almocos/', views.get_anos_disponiveis_almocos, name='get_anos_disponiveis_almocos'),
+    path('get_all_years/', views.get_all_years, name='get_all_years'),
 
 
 ]
