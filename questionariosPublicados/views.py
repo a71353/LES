@@ -172,9 +172,44 @@ def responderQuestionario(request, id):
             })
     else:
         return redirect('utilizadores:mensagem', 8000)
+    
+def verificarResponderQuestionario(request): #analisa o codigo fornecido
+    anoCorrente = datetime.now().year
+    diaabertoAtual = Diaaberto.objects.filter(ano=anoCorrente)
+    user = get_user(request)
+
+    if user.groups.filter(name="Participante").exists():
+        if diaabertoAtual.count() == 0:  # Se não existir Dia Aberto para o ano atual
+            return redirect('utilizadores:mensagem', 8002)
+        else:
+            questionarioId = diaabertoAtual[0].questionario
+            if questionarioId is None:  # Dia Aberto ainda não tem questionário
+                return redirect('utilizadores:mensagem', 8003)
+            else:  # Dia aberto tem questionário
+                questID = questionarioId.id
+                inscricoes = Inscricao.objects.filter(diaaberto=diaabertoAtual[0].id).all()
+
+                # Obter o código de inscrição da sessão
+                codigo_inscricao = request.session.get('codigo_inscricao', None)
+
+                if codigo_inscricao is None:
+                    return redirect('utilizadores:mensagem', 8005)  # Mensagem para "Código de inscrição não fornecido"
+
+                # Encontrar a inscrição pelo código
+                inscricao = Inscricao.objects.get(codigo=codigo_inscricao)
+                # Contar o número de respostas já enviadas para essa inscrição
+                num_respostas = Resposta.objects.filter(codigo=codigo_inscricao).count()
+
+                if num_respostas < inscricao.nalunos:  # Ainda permite resposta
+                    return redirect('questionariosPublicados:responder_questionario', questID)
+                else:  # Já excedeu o limite de respostas
+                    return redirect('utilizadores:mensagem', 8004)
+    else:
+        return redirect('utilizadores:mensagem', 8000)  # não é participante
 
 
-def verificarResponderQuestionario(request):
+
+def verificarResponderQuestionario2(request): #antigo
     anoCorrente = datetime.now().year
     diaabertoAtual = Diaaberto.objects.filter(ano=anoCorrente)
     user= get_user(request)

@@ -758,7 +758,7 @@ def relatorio_almoco_pdf(request, ano=None, rep=None):
         return render_pdf(request, "relatorios/relatorio_almoco_pdf.html", context, filename, save_file=False)
 
 
-def relatorio_almoco_csv(request, ano=None, rep=None):
+def relatorio_almoco_csv2(request, ano=None, rep=None):
     try:
         dia_aberto = Diaaberto.objects.get(ano=ano)
     except Diaaberto.DoesNotExist:
@@ -831,7 +831,7 @@ from django.http import HttpResponse
 from collections import defaultdict
 import os
 
-def relatorio_almoco_csv2(request, ano=None, rep=None):
+def relatorio_almoco_csv(request, ano=None, rep=None):
     try:
         dia_aberto = Diaaberto.objects.get(ano=ano)
     except Diaaberto.DoesNotExist:
@@ -986,7 +986,7 @@ def relatorio_almoco_dia_pdf(request, ano=None, rep=None, day=None):
         return render_pdf(request, "relatorios/relatorio_almoco_dia_pdf.html", context, filename, save_file=False)
     
 
-def relatorio_almoco_dia_csv(request, ano=None, rep=None, day=None):
+def relatorio_almoco_dia_csv2(request, ano=None, rep=None, day=None):
     try:
         dia_aberto = Diaaberto.objects.get(ano=ano)
     except Diaaberto.DoesNotExist:
@@ -1051,7 +1051,7 @@ def relatorio_almoco_dia_csv(request, ano=None, rep=None, day=None):
 
 
 #novo
-def relatorio_almoco_dia_excel(request, ano=None, rep=None, day=None):
+def relatorio_almoco_dia_csv(request, ano=None, rep=None, day=None):
     try:
         dia_aberto = Diaaberto.objects.get(ano=ano)
     except Diaaberto.DoesNotExist:

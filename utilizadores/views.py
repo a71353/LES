@@ -1253,7 +1253,7 @@ def mensagem(request, id, *args, **kwargs):
         m = "O Diaaberto atual ainda não possui questionarios!"
         tipo = "error"
     elif id == 8004:
-        m = "O Questionario ja excedeu o limite de respostas!"
+        m = "O Questionario ja excedeu o limite de respostas para este código!"
         tipo = "info"
     #Relatórios#######################################
     elif id == 8005:

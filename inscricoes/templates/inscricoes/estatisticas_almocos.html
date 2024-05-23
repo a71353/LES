@@ -39,11 +39,14 @@
                             </tr>
                         </tbody>
                     </table>
-                    <button id="exportPDF" style="font-size: 18px; padding: 12px 24px; background-color: black; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                    <button id="exportPDF" style="font-size: 18px; padding: 12px 24px; background-color: black; color: white; border: none; border-radius: 8px; cursor: pointer; margin-right: 10px;">
                         Exportar para PDF
                     </button>
-                    <a href="{% url 'estatisticas:estatisticas_almocos_csv' %}?diaaberto={{ diaabertoID }}" class="button is-primary">
+                    <a href="{% url 'inscricoes:estatisticas_almocos_csv' %}?diaaberto={{ diaabertoID }}" class="button is-primary" style="margin-right: 10px;">
                         Exportar para CSV
+                    </a>
+                    <a href="{% url 'inscricoes:estatisticas_almocos_excel' %}?diaaberto={{ diaabertoID }}" class="button is-primary" style="margin-right: 10px;">
+                        Exportar para excel
                     </a>
                 </div>
                 As informações dos gráficos estão em Porcentagens "%"

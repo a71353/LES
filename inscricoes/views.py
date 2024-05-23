@@ -1044,6 +1044,71 @@ def estatisticas_almocos_csv(request):
         return response
     else:
         return redirect('utilizadores:mensagem',9001)
+    
+from django.http import HttpResponse
+from openpyxl import Workbook
+from django.shortcuts import redirect
+
+def estatisticas_almocos_excel(request):
+    user = get_user(request)
+    if not user.groups.filter(name="Administrador").exists():
+        return redirect('utilizadores:mensagem', 9001)
+
+    diaabertoID = request.GET.get('diaaberto')
+    if not diaabertoID:
+        return HttpResponse("ID do Dia Aberto não fornecido ou inválido.", content_type="text/plain")
+
+    try:
+        diaaberto = Diaaberto.objects.get(id=diaabertoID)
+    except Diaaberto.DoesNotExist:
+        return HttpResponse("Dia Aberto não encontrado.", content_type="text/plain")
+
+    if not diaaberto.questionario:
+        return HttpResponse("Não há questionário associado ao Dia Aberto selecionado.", content_type="text/plain")
+
+    questionarioId = diaaberto.questionario.id
+    perguntas = Pergunta.objects.filter(questionario=questionarioId, tema__tema="Almoço", tipo_resposta='multipla_escolha').all()
+    if not perguntas:
+        return HttpResponse("Não há perguntas de múltipla escolha para o tema 'Almoço' associadas a este questionário.", content_type="text/plain")
+
+    wb = Workbook()
+    wb.remove(wb.active)  # remove a aba padrão criada automaticamente
+
+    contador = 0
+    for pergunta in perguntas:
+        contador += 1
+        if contador == 1:
+            sheet_title = "Pergunta"
+        else:
+            sheet_title = f"Pergunta{contador}"
+        ws = wb.create_sheet(title=sheet_title)
+        headers = ['Pergunta', 'Opções', 'Total', 'Porcentagem']
+        ws.append(headers)
+
+        opcoes = pergunta.opcoes.all()
+        total_respostas = Resposta_Individual.objects.filter(pergunta=pergunta).count()
+        first_line = True
+
+        for opcao in opcoes:
+            count_opcao = Resposta_Individual.objects.filter(pergunta=pergunta, resposta_texto=str(opcao.id)).count()
+            porcentagem = f"{(count_opcao / total_respostas * 100) if total_respostas > 0 else 0:.2f}%"
+            if first_line:
+                ws.append([pergunta.texto, opcao.texto_opcao, count_opcao, porcentagem])
+                first_line = False
+            else:
+                ws.append(['', opcao.texto_opcao, count_opcao, porcentagem])
+
+        # Ajuste automático da largura das colunas
+        for col in ws.columns:
+            max_length = max(len(str(cell.value)) for cell in col)
+            ws.column_dimensions[ws.cell(row=1, column=col[0].column).column_letter].width = max_length
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="estatisticas_almocos.xlsx"'
+    wb.save(response)
+
+    return response
+
 
 
 

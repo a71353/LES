@@ -117,6 +117,7 @@ class ListaQuestionarios(SingleTableMixin, FilterView):
     template_name = 'questionarios/lista_questionarios.html'
 
     def get_queryset(self):
+        validar_publicados(self.request)
         # Obtém o queryset original
         queryset = super().get_queryset()
         
@@ -399,6 +400,15 @@ def validarQuestionario(request, id):
             return redirect('utilizadores:mensagem',7003) #O questionario solicitado não pode ser Validado
     else:
         return redirect('utilizadores:mensagem',7002) #O Utilizador não possui permissoões para validar um questionario
+    
+from django.utils.timezone import now
+def validar_publicados(request):
+    if request.user.groups.filter(name="Administrador").exists():
+        questionarios = Questionario.objects.filter(estado__id='pub', data_fim_publicacao__lt=now().date())
+        estado_indisponivel = EstadoQuestionario.objects.get(id='dis')
+        for questionario in questionarios:
+            questionario.estado = estado_indisponivel
+            questionario.save()
     
 def rejeitarQuestionario(request, id):
     #user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -701,7 +711,7 @@ def enviar_motivo_rejeicao(request, id):
             send_mail(
                 'Motivo da Rejeição do Questionário',
                 motivo,
-                'a69845@ualg.pt',  # Substitua pelo e-mail que você quer que apareça como remetente
+                'les2024grupo13@gmail.com',  # senha: rootgrupo13
                 [autor.email],  # E-mail do autor
                 fail_silently=False,
             )
@@ -734,7 +744,7 @@ def reverterIndisponivel(request, id):
                 send_mail(
                     'Reversão do Questionário para Pendente',
                     motivo,
-                    'a69845@ualg.pt',  # Substitua pelo e-mail correto
+                    'les2024grupo13@gmail.com',  # senha: rootgrupo13
                     [autor.email],
                     fail_silently=False,
                 )
