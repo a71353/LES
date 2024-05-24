@@ -711,7 +711,7 @@ def enviar_motivo_rejeicao(request, id):
             send_mail(
                 'Motivo da Rejeição do Questionário',
                 motivo,
-                'les2024grupo13@gmail.com',  # senha: rootgrupo13
+                'a69845@ualg.pt',  
                 [autor.email],  # E-mail do autor
                 fail_silently=False,
             )
@@ -744,7 +744,7 @@ def reverterIndisponivel(request, id):
                 send_mail(
                     'Reversão do Questionário para Pendente',
                     motivo,
-                    'les2024grupo13@gmail.com',  # senha: rootgrupo13
+                    'a69845@ualg.pt',
                     [autor.email],
                     fail_silently=False,
                 )

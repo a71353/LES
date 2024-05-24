@@ -112,7 +112,8 @@ def responderQuestionario(request, id):
         return redirect('utilizadores:mensagem',1009)
 '''
 
-def responderQuestionario(request, id):
+#antigo
+def responderQuestionario3(request, id):
     questionario = Questionario.objects.get(id=id)
     perguntas = Pergunta.objects.filter(questionario=id).order_by('tema__tema', 'id').select_related('tema')
     user = get_user(request)
@@ -173,7 +174,86 @@ def responderQuestionario(request, id):
     else:
         return redirect('utilizadores:mensagem', 8000)
     
-def verificarResponderQuestionario(request): #analisa o codigo fornecido
+#novo(nao aparece o tema "atividade" caso a inscricao nao pussua)
+def responderQuestionario(request, id):
+    questionario = Questionario.objects.get(id=id)
+    perguntas = Pergunta.objects.filter(questionario=id).order_by('tema__tema', 'id').select_related('tema')
+    user = get_user(request)
+
+    codigo_inscricao = request.session.get('codigo_inscricao', None)
+    if codigo_inscricao is None:
+        return redirect('utilizadores:mensagem', 8005)  # Código de inscrição não fornecido
+
+    try:
+        inscricao = Inscricao.objects.get(codigo=codigo_inscricao)
+    except Inscricao.DoesNotExist:
+        return redirect('utilizadores:mensagem', 8006)  # Inscrição não encontrada
+
+    if not user.groups.filter(name="Participante").exists():
+        return redirect('utilizadores:mensagem', 8000)  # Não é participante
+
+    sessoes = Inscricaosessao.objects.filter(inscricao=inscricao).select_related('sessao')
+    atividades = [sessao.sessao.atividadeid for sessao in sessoes if sessao.sessao and sessao.sessao.atividadeid]
+
+    if request.method == 'POST':
+        resposta = Resposta.objects.create(questionario=questionario, data=datetime.now(), codigo=codigo_inscricao)
+        for pergunta in perguntas:
+                # Trata perguntas vinculadas a atividades
+                if pergunta.tema.tema == "Atividade":
+                    for atividade in atividades:
+                        resposta_texto = request.POST.get(f"respostas[{pergunta.id}_{atividade.id}]")
+                        if resposta_texto:
+                            Resposta_Individual.objects.create(
+                                resposta=resposta, 
+                                tipo_pergunta=pergunta.tipo_resposta, 
+                                pergunta=pergunta, 
+                                resposta_texto=resposta_texto,
+                                atividade_id=atividade.id
+                            )
+                else:
+                    print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+                    resposta_texto = request.POST.get(f"respostas[{pergunta.id}_]")
+                    print(resposta_texto)
+                    if resposta_texto:
+                        Resposta_Individual.objects.create(
+                            resposta=resposta, 
+                            tipo_pergunta=pergunta.tipo_resposta, 
+                            pergunta=pergunta, 
+                            resposta_texto=resposta_texto
+                        )
+        return redirect('utilizadores:mensagem', 8001)
+    else:
+
+        # Lógica para processamento do GET
+        perguntas_por_tema = {}
+        opcoes = []
+        for pergunta in perguntas:
+            tema = pergunta.tema.tema
+            if tema not in perguntas_por_tema:
+                perguntas_por_tema[tema] = []
+
+            if tema == "Atividade" and atividades:
+                for atividade in atividades:
+                    perguntas_por_tema[tema].append((pergunta, atividade))
+            elif tema != "Atividade":
+                perguntas_por_tema[tema].append((pergunta, None))
+
+            if pergunta.tipo_resposta == 'multipla_escolha':
+                opcoes.append({'pergunta_id': pergunta.id, 'opcoes': OpcaoP.objects.filter(pergunta=pergunta.id).all()})
+
+        # Evitar enviar dados vazios para o tema "Atividade"
+        if not atividades and "Atividade" in perguntas_por_tema:
+            del perguntas_por_tema["Atividade"]
+
+        return render(request, 'questionarios/responder_questionario.html', {
+            'questionario': questionario,
+            'perguntas_por_tema': perguntas_por_tema,
+            'opcoes_dict': opcoes
+        })
+
+
+#novo(analisa o codigo)  
+def verificarResponderQuestionario(request): 
     anoCorrente = datetime.now().year
     diaabertoAtual = Diaaberto.objects.filter(ano=anoCorrente)
     user = get_user(request)
@@ -208,8 +288,8 @@ def verificarResponderQuestionario(request): #analisa o codigo fornecido
         return redirect('utilizadores:mensagem', 8000)  # não é participante
 
 
-
-def verificarResponderQuestionario2(request): #antigo
+#antigo
+def verificarResponderQuestionario3(request): 
     anoCorrente = datetime.now().year
     diaabertoAtual = Diaaberto.objects.filter(ano=anoCorrente)
     user= get_user(request)

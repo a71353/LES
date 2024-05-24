@@ -757,7 +757,7 @@ def relatorio_almoco_pdf(request, ano=None, rep=None):
     else:
         return render_pdf(request, "relatorios/relatorio_almoco_pdf.html", context, filename, save_file=False)
 
-
+#normal
 def relatorio_almoco_csv2(request, ano=None, rep=None):
     try:
         dia_aberto = Diaaberto.objects.get(ano=ano)
@@ -831,6 +831,7 @@ from django.http import HttpResponse
 from collections import defaultdict
 import os
 
+#novo(excel)
 def relatorio_almoco_csv(request, ano=None, rep=None):
     try:
         dia_aberto = Diaaberto.objects.get(ano=ano)
@@ -847,43 +848,47 @@ def relatorio_almoco_csv(request, ano=None, rep=None):
     wb = Workbook()
     wb.remove(wb.active)  # remove a aba padrão criada automaticamente
 
+    sheets_por_dia = {}  # Dicionário para controlar as abas por dia
     totais_gerais = defaultdict(int)
+    totais_por_campus_dia = defaultdict(lambda: defaultdict(int))  # Dicionário para controlar totais por dia e campus
 
     # Criar a aba "Total" primeiro para reorganizar depois
     total_sheet = wb.create_sheet(title="Total")
     total_sheet.append(['Nº Grupo', 'Escola', 'Ano/Turma', 'Local', 'Dia', 'Cantina Penha', 'Cantina Gambelas', 'Cantina Portimão'])
 
     for inscricao in inscricoes:
-        ws = wb.create_sheet(title=f"{inscricao.dia}")
-        ws.append(['Nº Grupo', 'Escola', 'Ano/Turma', 'Local', 'Dia', 'Cantina Penha', 'Cantina Gambelas', 'Cantina Portimão'])
+        dia = inscricao.dia
+        if dia not in sheets_por_dia:
+            ws = wb.create_sheet(title=f"{dia}")
+            ws.append(['Nº Grupo', 'Escola', 'Ano/Turma', 'Local', 'Dia', 'Cantina Penha', 'Cantina Gambelas', 'Cantina Portimão'])
+            sheets_por_dia[dia] = ws
 
-        totais_por_campus = defaultdict(int)
+        ws = sheets_por_dia[dia]
         escola = inscricao.escola.nome
         ano_turma = f"{inscricao.ano}/{inscricao.turma if inscricao.turma else ''}"
         local = inscricao.escola.local
-        dia = inscricao.dia
 
         for prato in inscricao.inscricaoprato_set.all():
-            pratos_por_campus = defaultdict(int)
             campus = prato.campus.nome
-            pratos_por_campus[campus] = prato.npratosalunos + prato.npratosdocentes
-            totais_por_campus[campus] += pratos_por_campus[campus]
-            totais_gerais[campus] += pratos_por_campus[campus]
+            quantidade_pratos = prato.npratosalunos + prato.npratosdocentes
+            totais_por_campus_dia[dia][campus] += quantidade_pratos
+            totais_gerais[campus] += quantidade_pratos
 
-            line = [prato.id, escola, ano_turma, local, dia, 
-                    "---" if pratos_por_campus['Penha'] == 0 else pratos_por_campus['Penha'],
-                    "---" if pratos_por_campus['Gambelas'] == 0 else pratos_por_campus['Gambelas'],
-                    "---" if pratos_por_campus['Portimão'] == 0 else pratos_por_campus['Portimão']]
+            line = [prato.id, escola, ano_turma, local, dia,
+                    "---" if campus == 'Penha' and quantidade_pratos == 0 else quantidade_pratos if campus == 'Penha' else "---",
+                    "---" if campus == 'Gambelas' and quantidade_pratos == 0 else quantidade_pratos if campus == 'Gambelas' else "---",
+                    "---" if campus == 'Portimão' and quantidade_pratos == 0 else quantidade_pratos if campus == 'Portimão' else "---"]
 
             ws.append(line)
             total_sheet.append(line)
 
-        # Adicionar os totais de cada campus no final da aba da inscrição
+    # Adicionar os totais de cada campus no final de cada worksheet
+    for dia, ws in sheets_por_dia.items():
         ws.append([
             'Total', '---', '---', '---', '---',
-            totais_por_campus['Penha'],
-            totais_por_campus['Gambelas'],
-            totais_por_campus['Portimão']
+            totais_por_campus_dia[dia]['Penha'],
+            totais_por_campus_dia[dia]['Gambelas'],
+            totais_por_campus_dia[dia]['Portimão']
         ])
 
     # Adicionar os totais gerais na aba 'Total'
@@ -894,20 +899,18 @@ def relatorio_almoco_csv(request, ano=None, rep=None):
         totais_gerais['Portimão']
     ])
 
-    # Move the total sheet to the last position after all sheets are created
     wb._sheets.append(wb._sheets.pop(wb._sheets.index(total_sheet)))
 
-    # Se a opção 'rep' for 'yes', salvar o arquivo internamente
     if rep == 'yes':
         file_path = os.path.join(RELATORIOS_DIR, f"almocos_dia_aberto_{ano}.xlsx")
         wb.save(file_path)
 
-    # Preparar o arquivo para download
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = f'attachment; filename="almocos_dia_aberto_{ano}.xlsx"'
     wb.save(response)
 
     return response
+
 
 
 
@@ -985,7 +988,7 @@ def relatorio_almoco_dia_pdf(request, ano=None, rep=None, day=None):
     else:
         return render_pdf(request, "relatorios/relatorio_almoco_dia_pdf.html", context, filename, save_file=False)
     
-
+#normal
 def relatorio_almoco_dia_csv2(request, ano=None, rep=None, day=None):
     try:
         dia_aberto = Diaaberto.objects.get(ano=ano)
@@ -1050,7 +1053,7 @@ def relatorio_almoco_dia_csv2(request, ano=None, rep=None, day=None):
     return response
 
 
-#novo
+#novo(excel)
 def relatorio_almoco_dia_csv(request, ano=None, rep=None, day=None):
     try:
         dia_aberto = Diaaberto.objects.get(ano=ano)
