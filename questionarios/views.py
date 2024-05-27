@@ -711,7 +711,7 @@ def enviar_motivo_rejeicao(request, id):
             send_mail(
                 'Motivo da Rejeição do Questionário',
                 motivo,
-                'a69845@ualg.pt',  
+                'a71353@ualg.pt',  
                 [autor.email],  # E-mail do autor
                 fail_silently=False,
             )
@@ -744,7 +744,7 @@ def reverterIndisponivel(request, id):
                 send_mail(
                     'Reversão do Questionário para Pendente',
                     motivo,
-                    'a69845@ualg.pt',
+                    'a71353@ualg.pt',
                     [autor.email],
                     fail_silently=False,
                 )

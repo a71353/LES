@@ -94,7 +94,7 @@ def proporRoteiro(request):
                     'tipo': 'error',
                     'm': 'Tem de Selecionar pelo menos duas atividades.',
                     'continuar': True,  # Adicione esta linha para mostrar o botão Continuar
-                    'url': reverse('roteiros:poporRoteiro')  # Ajuste 'home' para a URL de redirecionamento desejada
+                    'url': reverse('roteiros:proporRoteiro')  # Ajuste 'home' para a URL de redirecionamento desejada
                 })
             else:
                 atividades_selecionadas = Atividade.objects.filter(id__in=atividades_ids)
