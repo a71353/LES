@@ -1,3 +1,4 @@
+from django.db import OperationalError
 from django.shortcuts import get_object_or_404, render, redirect  
 from .forms import AtividadeForm , MateriaisForm
 from .models import *
@@ -23,6 +24,19 @@ from django_tables2 import SingleTableMixin, SingleTableView
 from django_filters.views import FilterView
 
 
+
+def handle_db_errors(view_func):
+    def wrapper(request, *args, **kwargs):
+        try:
+            return view_func(request, *args, **kwargs)
+        except OperationalError as e:
+            print(f"Database error encountered: {e}")
+            return render(request, "db_error.html", status=503)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return render(request, "db_error.html", status=503)
+    return wrapper
+
 class AtividadesProfessor(SingleTableMixin, FilterView):
     
     table_class = ProfAtividadesTable
@@ -32,13 +46,13 @@ class AtividadesProfessor(SingleTableMixin, FilterView):
 		'per_page': 10
 	}
     
-
+    @handle_db_errors
     def dispatch(self, request, *args, **kwargs):
         user_check_var = user_check(request=request, user_profile=[ProfessorUniversitario])
         if not user_check_var.get('exists'): return user_check_var.get('render')
         self.user_check_var = user_check_var
         return super().dispatch(request, *args, **kwargs)
-        
+ 
     def get_queryset(self):
         return Atividade.objects.filter(professoruniversitarioutilizadorid=self.user_check_var.get('firstProfile')).order_by('-id').exclude(estado="nsub")
     
@@ -56,7 +70,7 @@ class AtividadesCoordenador(SingleTableMixin, FilterView):
     table_pagination = {
 		'per_page': 10
 	}
-    
+    @handle_db_errors
     def dispatch(self, request, *args, **kwargs):
         user_check_var = user_check(request=request, user_profile=[Coordenador])
         if not user_check_var.get('exists'): return user_check_var.get('render')
@@ -68,7 +82,7 @@ class AtividadesCoordenador(SingleTableMixin, FilterView):
     def get_queryset(self):
         return Atividade.objects.filter(professoruniversitarioutilizadorid__faculdade=self.user_check_var.get('firstProfile').faculdade).order_by('-id').exclude(estado="nsub")
     
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         table = self.get_table(**self.get_table_kwargs())
@@ -93,7 +107,8 @@ class AtividadesAdmin(SingleTableMixin, FilterView):
     table_pagination = {
 		'per_page': 10
 	}
-    
+
+    @handle_db_errors
     def dispatch(self, request, *args, **kwargs):
         user_check_var = user_check(request=request, user_profile=[Administrador])
         if not user_check_var.get('exists'): return user_check_var.get('render')
@@ -101,7 +116,7 @@ class AtividadesAdmin(SingleTableMixin, FilterView):
         today= datetime.now(timezone.utc) - timedelta(hours=1, minutes=00)
         Atividade.objects.filter(estado="nsub",datasubmissao__lte=today).delete()
         return super().dispatch(request, *args, **kwargs)
-
+    
     def get_queryset(self):
         return Atividade.objects.all().order_by('-id').exclude(estado="nsub")
     
@@ -147,7 +162,7 @@ def conflict_array():
                         conflito2.append(C1)
     return conflito2
 
-
+@handle_db_errors
 def alterarAtividade(request,id):
     user_check_var = user_check(request=request, user_profile=[ProfessorUniversitario])
     if user_check_var.get('exists') == False: return user_check_var.get('render')
@@ -261,7 +276,7 @@ def alterarAtividade(request,id):
                                 'tipo':'error',
                                 'm':'Não tem permissões para esta ação!'
                             })
-
+@handle_db_errors
 def eliminarAtividade(request,id):
     user_check_var = user_check(request=request, user_profile=[ProfessorUniversitario])
     if user_check_var.get('exists') == False: return user_check_var.get('render')
@@ -294,7 +309,7 @@ def eliminarAtividade(request,id):
     
 
 
-
+@handle_db_errors
 def eliminarSessao(request,id):
     user_check_var = user_check(request=request, user_profile=[ProfessorUniversitario])
     if user_check_var.get('exists') == False: return user_check_var.get('render')
@@ -323,7 +338,7 @@ def eliminarSessao(request,id):
                                 'm':'Não tem permissões para esta ação!'
                             })
 
-
+@handle_db_errors
 def proporatividade(request):
     
     user_check_var = user_check(request=request, user_profile=[ProfessorUniversitario])
@@ -373,7 +388,7 @@ def horariofim(inicio,duracao):
     minutos= int(calculo%60)
     fim= str(hora)+":"+str(minutos)
     return fim
-
+@handle_db_errors
 def inserirsessao(request,id):
 
     user_check_var = user_check(request=request, user_profile=[ProfessorUniversitario])
@@ -447,7 +462,7 @@ class TimeC():
     time: str = None
     seconds: int = None
     time_split = None
-
+    
     def __init__(self, time:str = None, time_as_seconds: int = None):
         if time is not None and time_as_seconds is not None:
             raise Exception('Only one argument can be set')
@@ -464,21 +479,19 @@ class TimeC():
             self.time_split = self.time.split(':')
             self.__str__()
 
-
+    
     def __add__(self, other):
         time_s = other.seconds
         time_sum = self.seconds+time_s
         if time_sum >= 86400:
             time_sum-=86400
         return TimeC(time_as_seconds=time_sum)
-
     def __sub__(self, other):
         time_s = other.seconds
         time_sub = self.seconds-time_s
         if time_sub < 0:
             time_sub=0
         return TimeC(time_as_seconds=time_sub)
-
     def __str__(self):
         if (len(self.time_split[0]) == 1): time_start = '0' + str(self.time_split[0]) 
         else: time_start = self.time_split[0]
@@ -486,7 +499,6 @@ class TimeC():
         else: time_end =  self.time_split[1]
         self.time= time_start+':'+time_end
         return self.time
-
 
     def __eq__(self, other):
         return other.__str__() == self.__str__()
@@ -503,14 +515,14 @@ class TimeC():
 
 
 
-
+@handle_db_errors
 def veredificios(request):
     campus=request.POST["valuecampus"]
     edificios = Edificio.objects.filter(campus=campus)
     print(request.POST["valuecampus"])
     print(edificios)
     return render(request, template_name="atividades/generic_list_options.html", context={"default": "Escolha um Edificio","generic": edificios})
-
+@handle_db_errors
 def versalas(request):
     edificios=request.POST["valueedificio"]
     print(request.POST["valueedificio"])
@@ -523,7 +535,7 @@ class Chorarios:
         self.inicio=inicio
         self.fim=fim
 
-
+@handle_db_errors
 def verhorarios(request):
     horarios=[]
     #horarioindisponivel = request.POST['horarioindisponivel[]']
@@ -591,7 +603,7 @@ def verhorarios(request):
                 template_name="configuracao/dropdown.html", 
                 context={"options": options,    "default": default})
 
-
+@handle_db_errors
 def validaratividade(request,id, action):
 
     user_check_var = user_check(request=request, user_profile=[Coordenador])
@@ -607,7 +619,7 @@ def validaratividade(request,id, action):
     atividade.save()
     return redirect('atividades:atividadesUOrganica')
 
-
+@handle_db_errors
 def verresumo(request,id):
 
     user_check_var = user_check(request=request, user_profile=[ProfessorUniversitario])
@@ -648,7 +660,7 @@ def verresumo(request,id):
                                 'm':'Não tem permissões para esta ação!'
                             })
 
-
+@handle_db_errors
 def confirmarResumo(request,id):
     user_check_var = user_check(request=request, user_profile=[ProfessorUniversitario])
     if user_check_var.get('exists') == False: return user_check_var.get('render')
@@ -690,7 +702,7 @@ def is_int(value):
         return val
     except:
         return False
-
+@handle_db_errors
 def verdeps(request):
     value_uo = request.POST.get("value_uo")
     value_dep = request.POST.get('value_dep')
@@ -720,7 +732,7 @@ def verdeps(request):
             } 
     return render(request=request,template_name='configuracao/dropdown.html',context={'options':deps, 'default': default})  
 
-    
+@handle_db_errors
 def verfaculdades(request):
     value_campus = request.POST.get('value_campus')
     value_uo = request.POST.get('value_uo')
@@ -753,7 +765,7 @@ def verfaculdades(request):
 
 
 
-
+@handle_db_errors
 def escolherDiaAbertoAtividade(request, id):
     atividade_original = get_object_or_404(Atividade, id=id)
     current_year = datetime.now().year
@@ -794,7 +806,7 @@ def escolherDiaAbertoAtividade(request, id):
     })
 
 
-
+@handle_db_errors
 def duplicarAtividade(request, id, novo_diaaberto_id):
     
     atividade_original = Atividade.objects.filter(id=id).first()
@@ -834,7 +846,7 @@ def duplicarAtividade(request, id, novo_diaaberto_id):
     #message.success(request, "Atividade duplicada com sucesso.")
     return redirect('atividades:minhasAtividades')
 
-   
+
 def adjust_session_date_atividade(original_date, novo_diaaberto):
     start_date = novo_diaaberto.datadiaabertoinicio.date()
     end_date = novo_diaaberto.datadiaabertofim.date()

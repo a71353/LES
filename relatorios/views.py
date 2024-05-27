@@ -18,7 +18,7 @@ from configuracao.models import Diaaberto
 from django.db.models import Sum
 from .forms import RelatorioForm
 from django.contrib import messages
-from django.db import transaction
+from django.db import OperationalError, transaction
 from django.contrib.auth.mixins import LoginRequiredMixin
 import os
 from django.template.loader import render_to_string
@@ -35,7 +35,17 @@ import csv
 from django.db.models import Q
 from django.http import JsonResponse
 
-
+def handle_db_errors(view_func):
+    def wrapper(request, *args, **kwargs):
+        try:
+            return view_func(request, *args, **kwargs)
+        except OperationalError as e:
+            print(f"Database error encountered: {e}")
+            return render(request, "db_error.html", status=503)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return render(request, "db_error.html", status=503)
+    return wrapper
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -71,7 +81,7 @@ class ListaRelatorios(SingleTableMixin, FilterView):
         context['has_relatorios'] = bool(relatorios)  # True if there are reports, False otherwise
         return context
 
-
+@handle_db_errors
 def create_report(request, dia_aberto, export_type, tema):
     relatorio_data = {
         'tema': tema,
@@ -88,7 +98,7 @@ def create_report(request, dia_aberto, export_type, tema):
         for error in form.errors.values():
             messages.error(request, error)
 
-
+@handle_db_errors
 def relatorio_transporte(request, ano=None, rep=None):
     """View que gera um PDF com os detalhes das inscrições para um dado ano do diaaberto"""
 
@@ -140,7 +150,7 @@ def relatorio_transporte(request, ano=None, rep=None):
         return render_pdf(request, "relatorios/relatorio_transporte.html", context, filename, save_file=True)
     else:
         return render_pdf(request, "relatorios/relatorio_transporte.html", context, filename)
-
+@handle_db_errors
 def relatorio_transporte_dia(request, ano=None, rep=None, day=None):
     """View que gera um PDF com os detalhes das inscrições para um dado ano e dia do diaaberto"""
 
@@ -191,7 +201,7 @@ def relatorio_transporte_dia(request, ano=None, rep=None, day=None):
     else:
         return render_pdf(request, "relatorios/relatorio_transporte.html", context, filename)
 
-
+@handle_db_errors
 def relatorio_transporte_csv(request, ano=None, rep=None):
 
     dia_aberto = Diaaberto.objects.get(ano=ano)
@@ -253,7 +263,7 @@ def populate_csv_transportes(writer, dia, inscricoes_dia):
                 transporte_inscricao.npassageiros
             ])
 
-
+@handle_db_errors
 def relatorio_transporte_csv_dia(request, ano=None, rep=None, day=None):
     """View que gera um CSV com os detalhes das inscrições de transporte para um dado ano e dia do diaaberto"""
 
@@ -305,7 +315,7 @@ def relatorio_transporte_csv_dia(request, ano=None, rep=None, day=None):
 
 
 
-
+@handle_db_errors
 def render_pdf(request, template_src, context, output_filename, save_file=False):
     # Suponha que você queira gerar um URL absoluto para uma imagem estática
     logo_path = staticfiles_storage.url('img/ualg-logo.png')
@@ -330,7 +340,7 @@ def render_pdf(request, template_src, context, output_filename, save_file=False)
     return FileResponse(io.BytesIO(result.getvalue()), content_type='application/pdf', as_attachment=True, filename=output_filename)
 
 
-
+@handle_db_errors
 def relatorio_atividade(request, ano=None, rep=None):
     dia_aberto = Diaaberto.objects.get(ano=ano)
     inscricoes = Inscricao.objects.filter(diaaberto=dia_aberto)
@@ -372,7 +382,7 @@ def relatorio_atividade(request, ano=None, rep=None):
         # Apenas gerar o PDF para visualização, sem salvar
         return render_pdf(request, "relatorios/relatorio_atividade.html", context, filename)
     
-
+@handle_db_errors
 def relatorio_atividade_dia(request, ano=None, rep=None, day=None):
     try:
         dia_aberto = Diaaberto.objects.get(ano=ano)
@@ -423,7 +433,7 @@ def relatorio_atividade_dia(request, ano=None, rep=None, day=None):
         return JsonResponse({'error': 'No open day found for the given year.'}, status=404)
     
 
-
+@handle_db_errors
 def relatorio_atividade_csv(request, ano=None, rep=None):
     """View que gera e opcionalmente salva um CSV com detalhes das sessões para um dado ano do Dia Aberto."""
     dia_aberto = Diaaberto.objects.get(ano=ano)
@@ -453,7 +463,7 @@ def relatorio_atividade_csv(request, ano=None, rep=None):
     response = HttpResponse(buffer, content_type='text/csv')
     response['Content-Disposition'] = f'attachment; filename="atividades_dia_aberto_{ano}_{timestamp}.csv"'
     return response
-
+@handle_db_errors
 def relatorio_atividade_csv_dia(request, ano=None, rep=None, day=None):
     """View que gera e opcionalmente salva um CSV com detalhes das sessões para um dado ano e dia do Dia Aberto."""
     try:
@@ -524,7 +534,7 @@ def populate_csv(writer, inscricoes):
                 atividade.participantesmaximo
             ])
 
-
+@handle_db_errors
 def relatorio_presencas(request, ano=None, rep=None):
     try:
         dia_aberto = Diaaberto.objects.get(ano=ano)
@@ -568,7 +578,7 @@ def relatorio_presencas(request, ano=None, rep=None):
     else:
         # Apenas gerar o PDF para visualização, sem salvar
         return render_pdf(request, "relatorios/relatorio_presencas.html", context, filename)
-
+@handle_db_errors
 def relatorio_presencas_csv(request, ano=None, rep=None):
     # Fetch the 'Diaaberto' instance for the given year
     try:
@@ -607,7 +617,7 @@ def relatorio_presencas_csv(request, ano=None, rep=None):
 
     # Return the response to be downloaded as a CSV file
     return response
-
+@handle_db_errors
 def relatorio_view(request):
     if request.method == 'POST':
         # Processar o formulário enviado
@@ -672,19 +682,19 @@ def relatorio_view(request):
         }
         return render(request, 'relatorios/p_relatorio_atividade.html', context)
     
-
+@handle_db_errors
 def abrir_relatorio(request, filename):
     file_path = os.path.join(RELATORIOS_DIR, filename)
     return FileResponse(open(file_path, 'rb'), as_attachment=False)
 
-
+@handle_db_errors
 def deletar_relatorio(request, filename):
     file_path = os.path.join(RELATORIOS_DIR, filename)
     if os.path.exists(file_path):
         os.remove(file_path)
     return HttpResponseRedirect('/relatorios/')
 
-
+@handle_db_errors
 def relatorio_almoco_pdf(request, ano=None, rep=None):
     try:
         dia_aberto = Diaaberto.objects.get(ano=ano)
@@ -758,6 +768,7 @@ def relatorio_almoco_pdf(request, ano=None, rep=None):
         return render_pdf(request, "relatorios/relatorio_almoco_pdf.html", context, filename, save_file=False)
 
 #normal
+@handle_db_errors
 def relatorio_almoco_csv2(request, ano=None, rep=None):
     try:
         dia_aberto = Diaaberto.objects.get(ano=ano)
@@ -832,6 +843,7 @@ from collections import defaultdict
 import os
 
 #novo(excel)
+@handle_db_errors
 def relatorio_almoco_csv(request, ano=None, rep=None):
     try:
         dia_aberto = Diaaberto.objects.get(ano=ano)
@@ -913,7 +925,7 @@ def relatorio_almoco_csv(request, ano=None, rep=None):
 
 
 
-
+@handle_db_errors
 def inscricoes_por_dia(request, tema, ano):
     if tema == "almoco":
         dia_aberto = Diaaberto.objects.filter(ano=ano).first()
@@ -935,7 +947,7 @@ def inscricoes_por_dia(request, tema, ano):
             return JsonResponse({'dias': list(inscricoes)}, safe=False)
     return JsonResponse({'error': 'Nenhum dado encontrado'}, status=404)
 
-
+@handle_db_errors
 def relatorio_almoco_dia_pdf(request, ano=None, rep=None, day=None):
     try:
         dia_aberto = Diaaberto.objects.get(ano=ano)
@@ -989,6 +1001,7 @@ def relatorio_almoco_dia_pdf(request, ano=None, rep=None, day=None):
         return render_pdf(request, "relatorios/relatorio_almoco_dia_pdf.html", context, filename, save_file=False)
     
 #normal
+@handle_db_errors
 def relatorio_almoco_dia_csv2(request, ano=None, rep=None, day=None):
     try:
         dia_aberto = Diaaberto.objects.get(ano=ano)
@@ -1054,6 +1067,7 @@ def relatorio_almoco_dia_csv2(request, ano=None, rep=None, day=None):
 
 
 #novo(excel)
+@handle_db_errors
 def relatorio_almoco_dia_csv(request, ano=None, rep=None, day=None):
     try:
         dia_aberto = Diaaberto.objects.get(ano=ano)
@@ -1118,7 +1132,7 @@ def relatorio_almoco_dia_csv(request, ano=None, rep=None, day=None):
     return response
 
 
-
+@handle_db_errors
 def get_anos_disponiveis_almocos(request):
     # Buscar anos onde existem inscrições prato associadas ao tema "almoços"
     anos = Diaaberto.objects.filter(
@@ -1126,7 +1140,7 @@ def get_anos_disponiveis_almocos(request):
     ).distinct().order_by('ano').values_list('ano', flat=True)
 
     return JsonResponse(list(anos), safe=False)
-
+@handle_db_errors
 def get_all_years(request):
     # Buscar anos onde existem inscrições prato associadas ao tema "almoços"
     anos = Diaaberto.objects.all().order_by('ano').values_list('ano', flat=True).distinct()

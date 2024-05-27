@@ -1,4 +1,5 @@
 from collections import defaultdict
+from django.db import OperationalError
 from django.shortcuts import render
 from configuracao.models import Diaaberto,Menu, Prato
 from questionariosPublicados.models import *
@@ -11,6 +12,18 @@ from questionariosPublicados.models import Pergunta, Resposta_Individual
 from django.contrib.auth import get_user
 from django.shortcuts import render, redirect, get_object_or_404
 
+def handle_db_errors(view_func):
+    def wrapper(request, *args, **kwargs):
+        try:
+            return view_func(request, *args, **kwargs)
+        except OperationalError as e:
+            print(f"Database error encountered: {e}")
+            return render(request, "db_error.html", status=503)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return render(request, "db_error.html", status=503)
+    return wrapper
+@handle_db_errors
 def estatisticas_almocos(request):
     user = get_user(request)
     if user.groups.filter(name="Administrador").exists():
@@ -113,7 +126,7 @@ def estatisticas_almocos(request):
                     context={'diasAbertos':dias_abertos});
     else:
         return redirect('utilizadores:mensagem',9000)
-
+@handle_db_errors
 def estatisticas_almocos_csv(request):
     user = get_user(request)
     if user.groups.filter(name="Administrador").exists():
@@ -169,7 +182,7 @@ def estatisticas_almocos_csv(request):
 from django.http import HttpResponse
 from openpyxl import Workbook
 from django.shortcuts import redirect
-
+@handle_db_errors
 def estatisticas_almocos_excel(request):
     user = get_user(request)
     if not user.groups.filter(name="Administrador").exists():
@@ -229,7 +242,7 @@ def estatisticas_almocos_excel(request):
     wb.save(response)
 
     return response
-
+@handle_db_errors
 def estatistica_transporte(request):
     user = get_user(request)
     if not user.groups.filter(name="Administrador").exists():

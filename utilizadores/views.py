@@ -15,7 +15,7 @@ from configuracao.models import Unidadeorganica,Departamento,Curso
 from django.core.paginator import Paginator
 from notificacoes import views
 from inscricoes.models import Inscricao
-from django.db import transaction
+from django.db import OperationalError, transaction
 from atividades.models import Sessao
 from notificacoes.models import *
 from coordenadores.models import Tarefa
@@ -24,7 +24,19 @@ from django_tables2 import SingleTableMixin
 from django_filters.views import FilterView
 
 
+def handle_db_errors(view_func):
+    def wrapper(request, *args, **kwargs):
+        try:
+            return view_func(request, *args, **kwargs)
+        except OperationalError as e:
+            print(f"Database error encountered: {e}")
+            return render(request, "db_error.html", status=503)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return render(request, "db_error.html", status=503)
+    return wrapper
 
+@handle_db_errors
 def user_check(request, user_profile = None):
     ''' 
     Verifica se o utilizador que esta logado pertence a pelo menos um dos perfis mencionados 
@@ -49,7 +61,7 @@ def user_check(request, user_profile = None):
     raise Exception('Unknown Error!')
 
 
-
+@handle_db_errors
 def load_departamentos(request):
     ''' Carregar todos os departamentos para uma determinada faculdade '''
     faculdadeid = request.GET.get('faculdade')
@@ -59,7 +71,7 @@ def load_departamentos(request):
 
 
 
-
+@handle_db_errors
 def load_cursos(request):
     ''' Carregar todos os cursos para uma determinada faculdade '''
     faculdadeid = request.GET.get('faculdade')
@@ -77,7 +89,7 @@ class consultar_utilizadores(SingleTableMixin, FilterView):
     table_pagination = {
         'per_page': 10
     }
-
+    @handle_db_errors
     def dispatch(self, request, *args, **kwargs):
         user_check_var = user_check(
             request=request, user_profile=[Coordenador, Administrador])
@@ -95,7 +107,7 @@ class consultar_utilizadores(SingleTableMixin, FilterView):
 
 
 
-
+@handle_db_errors
 def escolher_perfil(request):
     ''' Escolher tipo de perfil para criar um utilizador '''
     if request.user.is_authenticated:    
@@ -122,7 +134,7 @@ def escolher_perfil(request):
 
 
 
-
+@handle_db_errors
 def criar_utilizador(request, id):
     ''' Criar um novo utilizador que poderá ter de ser validado dependendo do seu tipo '''
     if request.user.is_authenticated:    
@@ -222,7 +234,7 @@ def criar_utilizador(request, id):
 
 
 
-
+@handle_db_errors
 def login_action(request):
     ''' Fazer login na plataforma do dia aberto e gestão de acessos à plataforma '''
     if request.user.is_authenticated: 
@@ -263,7 +275,7 @@ def login_action(request):
 
 
 
-
+@handle_db_errors
 def logout_action(request):
     ''' Fazer logout na plataforma '''
     logout(request)
@@ -272,7 +284,7 @@ def logout_action(request):
 
 
 
-
+@handle_db_errors
 def alterar_password(request):
     ''' Alterar a password do utilizador '''
     if request.user.is_authenticated:    
@@ -311,7 +323,7 @@ def alterar_password(request):
 
 
 
-
+@handle_db_errors
 def rejeitar_utilizador(request, id): 
     ''' Funcionalidade de rejeitar um utilizador na pagina de consultar utilizadores '''
     if request.user.is_authenticated:    
@@ -346,14 +358,14 @@ def rejeitar_utilizador(request, id):
 
 
 
-
+@handle_db_errors
 def alterar_idioma(request):  
     ''' Alterar o idioma da plataforma ''' 
     return redirect('utilizadores:mensagem',5)  
 
 
 
-
+@handle_db_errors
 def validar_utilizador(request, id): 
     ''' Validar um utilizador na pagina consultar utilizadores '''
     if request.user.is_authenticated:    
@@ -389,7 +401,7 @@ def validar_utilizador(request, id):
 
 
 
-
+@handle_db_errors
 def apagar_utilizador(request, id): 
     ''' Apagar um utilizador na pagina consultar utilizadores '''
     if request.user.is_authenticated:    
@@ -466,7 +478,7 @@ def apagar_utilizador(request, id):
 
 
 
-
+@handle_db_errors
 def apagar_proprio_utilizador(request):  
     ''' Apagar a própria conta '''
     if request.user.is_authenticated:
@@ -542,7 +554,7 @@ def apagar_proprio_utilizador(request):
         return redirect('utilizadores:mensagem',13)
 
     return redirect('utilizadores:mensagem',7)   
-
+@handle_db_errors
 def mensagem1(request, id, *args, **kwargs):
     ''' Template de mensagens informativas/erro/sucesso '''
 
@@ -583,7 +595,7 @@ def mensagem1(request, id, *args, **kwargs):
     return render(request=request,
         template_name="mensagem1.html", context={'m': m, 'tipo': tipo ,'u': u, 'continuar': continuar,})
 
-
+@handle_db_errors
 def mensagem2(request, id, *args, **kwargs):
     ''' Template de mensagens informativas/erro/sucesso '''
 
@@ -623,7 +635,7 @@ def mensagem2(request, id, *args, **kwargs):
         continuar = "off" 
     return render(request=request,
         template_name="mensagem2.html", context={'m': m, 'tipo': tipo ,'u': u, 'continuar': continuar,})
-
+@handle_db_errors
 def mensagem3(request, id, *args, **kwargs):
     ''' Template de mensagens informativas/erro/sucesso '''
 
@@ -663,7 +675,7 @@ def mensagem3(request, id, *args, **kwargs):
         continuar = "off" 
     return render(request=request,
         template_name="mensagem3.html", context={'m': m, 'tipo': tipo ,'u': u, 'continuar': continuar,})
-
+@handle_db_errors
 def mensagem4(request, id, *args, **kwargs):
     ''' Template de mensagens informativas/erro/sucesso '''
 
@@ -703,7 +715,7 @@ def mensagem4(request, id, *args, **kwargs):
         continuar = "off" 
     return render(request=request,
         template_name="mensagem4.html", context={'m': m, 'tipo': tipo ,'u': u, 'continuar': continuar,})
-
+@handle_db_errors
 def mensagem5(request, id, *args, **kwargs):
     ''' Template de mensagens informativas/erro/sucesso '''
 
@@ -743,7 +755,7 @@ def mensagem5(request, id, *args, **kwargs):
         continuar = "off" 
     return render(request=request,
         template_name="mensagem5.html", context={'m': m, 'tipo': tipo ,'u': u, 'continuar': continuar,})
-
+@handle_db_errors
 def mensagem6(request, id, *args, **kwargs):
     ''' Template de mensagens informativas/erro/sucesso '''
 
@@ -783,7 +795,7 @@ def mensagem6(request, id, *args, **kwargs):
         continuar = "off" 
     return render(request=request,
         template_name="mensagem6.html", context={'m': m, 'tipo': tipo ,'u': u, 'continuar': continuar,})
-
+@handle_db_errors
 def enviar_email_validar(request,nome,id):
     ''' Envio de email quando o utilizador é validado na pagina consultar utilizadores '''  
     msg="A enviar email a "+nome+" a informar que o seu registo foi validado"
@@ -796,7 +808,7 @@ def enviar_email_validar(request,nome,id):
                   context={"msg": msg, "id":id})
 
 
-
+@handle_db_errors
 def enviar_email_rejeitar(request,nome,id):  
     ''' Envio de email quando o utilizador é rejeitado na pagina consultar utilizadores '''
     msg="A enviar email a "+nome+" a informar que o seu registo foi rejeitado"
@@ -809,7 +821,7 @@ def enviar_email_rejeitar(request,nome,id):
                   context={"msg": msg, "id":id})
 
 
-
+@handle_db_errors
 def alterar_utilizador_admin(request,id):
     ''' Funcionalidade de o administrador alterar um utilizador '''
     if request.user.is_authenticated:    
@@ -910,7 +922,7 @@ def alterar_utilizador_admin(request,id):
 
 
 
-
+@handle_db_errors
 def alterar_utilizador(request):
     ''' Funcionalidade de alterar dados de conta '''
     if request.user.is_authenticated:    
@@ -1011,7 +1023,7 @@ def alterar_utilizador(request):
 
 
 
-
+@handle_db_errors
 def home(request):
     ''' Pagina principal da plataforma '''
     if request.user.is_authenticated:    
@@ -1034,7 +1046,7 @@ def home(request):
     return render(request, "inicio.html",context={ 'u': u})
 
 
-
+@handle_db_errors
 def concluir_registo(request,id):
     ''' Página que é mostrada ao utilizador quando faz um registo na plataforma '''
     if request.user.is_authenticated:    
@@ -1065,7 +1077,7 @@ def concluir_registo(request,id):
 
 
 
-
+@handle_db_errors
 def mensagem(request, id, *args, **kwargs):
     ''' Template de mensagens informativas/erro/sucesso '''
 
@@ -1303,7 +1315,7 @@ def mensagem(request, id, *args, **kwargs):
 
 
 
-
+@handle_db_errors
 def mudar_perfil_escolha_admin(request,id):
     '''  Funcionalidade de o administrador alterar o perfil de um dado utilizador 
      Redireciona para uma pagina onde é possível escolher o perfil que quer alterar '''
@@ -1336,7 +1348,7 @@ def mudar_perfil_escolha_admin(request,id):
 
 
 
-
+@handle_db_errors
 def mudar_perfil_escolha(request):
     ''' Funcionalidade de o utilizador alterar o seu próprio perfil
     Redireciona para uma pagina onde é possível escolher o perfil que quer alterar '''
@@ -1380,7 +1392,7 @@ def mudar_perfil_escolha(request):
 
 
 
-
+@handle_db_errors
 def mudar_perfil_admin(request,tipo,id):
     ''' Funcionalidade de o administrador alterar o perfil de um dado utilizador 
     Redireciona para uma pagina que contem os dados já existentes do utilizador a alterar sendo 
@@ -1506,7 +1518,7 @@ def mudar_perfil_admin(request,tipo,id):
 
 
 
-
+@handle_db_errors
 def mudar_perfil(request,tipo):  
     ''' Alterar perfil do próprio utilizador
     Redireciona para uma pagina que contem os dados já existentes do utilizador a alterar

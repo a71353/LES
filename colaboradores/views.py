@@ -1,3 +1,4 @@
+from django.db import OperationalError
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from .models import *
@@ -25,7 +26,17 @@ from django.utils.datetime_safe import date
 from utilizadores.views import user_check
 from django.forms.models import modelformset_factory
 
-
+def handle_db_errors(view_func):
+    def wrapper(request, *args, **kwargs):
+        try:
+            return view_func(request, *args, **kwargs)
+        except OperationalError as e:
+            print(f"Database error encountered: {e}")
+            return render(request, "db_error.html", status=503)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return render(request, "db_error.html", status=503)
+    return wrapper
 
 class consultar_tarefas(SingleTableMixin, FilterView):
 	''' Funcionalidade de consultar tarefas do colaborador atual, funcionalidades de filtros para a a consulta das tarefas '''
@@ -33,7 +44,7 @@ class consultar_tarefas(SingleTableMixin, FilterView):
 	table_class = TarefasTable
 	filterset_class = TarefasFilter
 	paginate_by = 10
-
+	@handle_db_errors
 	def dispatch(self, request, *args, **kwargs):
 		user_check_var = user_check(
 			request=request, user_profile=[Colaborador])
@@ -54,7 +65,7 @@ class AtividadesColaborador(SingleTableMixin, FilterView):
 	table_pagination = {
 		'per_page': 10
 	}
-	
+	@handle_db_errors
 	def dispatch(self, request, *args, **kwargs):
 		user_check_var = user_check(request=request, user_profile=[Colaborador])
 		if not user_check_var.get('exists'): return user_check_var.get('render')
@@ -63,7 +74,7 @@ class AtividadesColaborador(SingleTableMixin, FilterView):
 
 	def get_queryset(self):
 		return self.user_check_var.get('firstProfile').get_preferencia_atividade()
-	
+
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
 		table = self.get_table(**self.get_table_kwargs())
@@ -81,7 +92,7 @@ class AtividadesColaboradorSelecionadas(SingleTableMixin, FilterView):
 	table_pagination = {
 		'per_page': 10
 	}
-	
+	@handle_db_errors
 	def dispatch(self, request, *args, **kwargs):
 		user_check_var = user_check(request=request, user_profile=[Colaborador])
 		if not user_check_var.get('exists'): return user_check_var.get('render')
@@ -90,7 +101,7 @@ class AtividadesColaboradorSelecionadas(SingleTableMixin, FilterView):
 
 	def get_queryset(self):
 		return self.user_check_var.get('firstProfile').get_atividades_escolhidas_tabela()
-	
+
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
 		table = self.get_table(**self.get_table_kwargs())
@@ -99,7 +110,7 @@ class AtividadesColaboradorSelecionadas(SingleTableMixin, FilterView):
 		context[self.get_context_table_name(table)] = table
 		return context
 
-
+@handle_db_errors
 def ver_departamentos(request):
 	user_check_var = user_check(request=request, user_profile=[Colaborador])
 	if not user_check_var.get('exists'): return user_check_var.get('render')
@@ -133,7 +144,7 @@ def ver_departamentos(request):
 	return render(request=request,template_name='configuracao/dropdown.html',context={'options':deps, 'default': default})   
 
 
-
+@handle_db_errors
 def minha_disponibilidade(request): 
 	''' Página onde o colaborador seleciona a disponibilidade para desempenhar tarefas escolhendo desta forma o(s) horário(s) que lhe dá mais jeito '''
 	if request.user.is_authenticated:    
@@ -234,7 +245,7 @@ def minha_disponibilidade(request):
 def preferenciaHorarioFormset(extra = 0, minVal = 1):
 	formSets = modelformset_factory(model=ColaboradorHorario, exclude = ['colab','id'],form=colaboradorHorarioForm, extra = extra, min_num = minVal, can_delete=True, )
 	return formSets
-
+@handle_db_errors
 def newHorarioRow(request):
 	value = int(request.POST.get('extra'))
 	data = {
@@ -248,7 +259,7 @@ def newHorarioRow(request):
 
 
 
-
+@handle_db_errors
 def concluir_disponibilidade(request):
 	''' Página que é mostrada ao colaborador quando altera a sua disponibilidade na plataforma '''
 	if request.user.is_authenticated:    
@@ -263,7 +274,7 @@ def concluir_disponibilidade(request):
 	return render(request=request,
 				  template_name="colaboradores/concluir_disponibilidade.html")
 
-
+@handle_db_errors
 def selecionar_atividade(request,id):
 	''' Selecionar uma atividade como preferencia '''
 	if request.user.is_authenticated:    
@@ -283,7 +294,7 @@ def selecionar_atividade(request,id):
 
 
 
-
+@handle_db_errors
 def retirar_atividade(request,id):
 	''' Remover uma atividade das preferencias '''
 	if request.user.is_authenticated:    
@@ -301,7 +312,7 @@ def retirar_atividade(request,id):
 	preferencia_atividade.delete()
 	return redirect('colaboradores:atividades-escolhidas')
 
-
+@handle_db_errors
 def preferencia_atividade(request):
 	''' Página que permite ao colaborador obtar por escolher as atividades que pretende, ver atividades escolhidas, ou concluir a sua atualização de disponibilidade '''
 	if request.user.is_authenticated:    
@@ -314,7 +325,7 @@ def preferencia_atividade(request):
 		return redirect('utilizadores:mensagem',5)
 	return render(request=request,
 				  template_name="colaboradores/preferencia_atividade.html")
-
+@handle_db_errors
 def concluir_tarefa(request, id): 
 	''' Funcionalidade de conclusão de uma tarefa do colaborador '''
 	if request.user.is_authenticated:    
@@ -336,7 +347,7 @@ def concluir_tarefa(request, id):
 				  context={"msg": msg})
 
 
-
+@handle_db_errors
 def iniciar_tarefa(request, id): 
 	''' Funcionalidade de inicio de uma tarefa do colaborador '''
 	if request.user.is_authenticated:    
@@ -355,7 +366,7 @@ def iniciar_tarefa(request, id):
 	return redirect('colaboradores:consultar-tarefas')   
 
 
-
+@handle_db_errors
 def cancelar_tarefa(request, id):
 	''' Funcionalidade de cancelamento de uma tarefa do colaborador ''' 
 	if request.user.is_authenticated:    
@@ -375,7 +386,7 @@ def cancelar_tarefa(request, id):
 				  template_name="colaboradores/enviar_notificacao_informativa.html",
 				  context={"msg": msg})
 
-
+@handle_db_errors
 def validar_cancelamento_tarefa(request, id_notificacao):
 	if request.user.is_authenticated:    
 		user = get_user(request)
@@ -397,7 +408,7 @@ def validar_cancelamento_tarefa(request, id_notificacao):
 	except:
 		return redirect('utilizadores:mensagem',11)    
 	return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-
+@handle_db_errors
 def rejeitar_cancelamento_tarefa(request, id_notificacao):
 	if request.user.is_authenticated:    
 		user = get_user(request)

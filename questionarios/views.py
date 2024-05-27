@@ -48,7 +48,17 @@ from .models import Questionario
 import json
 
 
-
+def handle_db_errors(view_func):
+    def wrapper(request, *args, **kwargs):
+        try:
+            return view_func(request, *args, **kwargs)
+        except OperationalError as e:
+            print(f"Database error encountered: {e}")
+            return render(request, "db_error.html", status=503)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return render(request, "db_error.html", status=503)
+    return wrapper
 # Create your views here.
 #gustavo
 
@@ -139,7 +149,7 @@ class ListaQuestionarios(SingleTableMixin, FilterView):
 
         return queryset
     
-
+@handle_db_errors
 def criarQuestionario(request):
     if request.method == 'POST':
         form = QuestionarioForm(request.POST)
@@ -170,7 +180,7 @@ def criarQuestionario(request):
         form = QuestionarioForm()
 
     return render(request, 'questionarios/criar_questionario.html', {'form': form})
-
+@handle_db_errors
 def editarQuestionario(request, id):
     questionario = get_object_or_404(Questionario, pk=id)
     if request.method == 'POST':
@@ -191,7 +201,7 @@ def editarQuestionario(request, id):
 
     return render(request, 'questionarios/editar_questionarios.html', {'form': form})
 
-
+@handle_db_errors
 def deletarQuestionario(request, id):
 	user_check_var = user_check(request=request, user_profile=[Administrador])
 	if user_check_var.get('exists') == False: return user_check_var.get('render')
@@ -202,7 +212,7 @@ def deletarQuestionario(request, id):
 	return redirect('questionarios:lista_questionarios')
 
 
-
+@handle_db_errors
 def inserirPerguntas(request, id):
     # Verificação de permissão (assumindo que você tem uma função similar à user_check)
     user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -243,7 +253,7 @@ def inserirPerguntas(request, id):
         'perguntas_quest': Pergunta.objects.filter(questionario_id=id).select_related('tema')
     })
 
-
+@handle_db_errors
 def eliminarPergunta(request, id):
     user_check_var = user_check(request=request, user_profile=[Administrador])
     if not user_check_var.get('exists'):
@@ -264,7 +274,7 @@ def eliminarPergunta(request, id):
         })
     
 
-
+@handle_db_errors
 def editar_pergunta(request, id):
     pergunta = get_object_or_404(Pergunta, id=id)
 
@@ -297,7 +307,6 @@ def editar_pergunta(request, id):
     return render(request, 'questionarios/editar_perguntas.html', {'form': form, 'pergunta': pergunta})
 
 
-
 def verificar_temas(questionario):
     temas = set()
     get_perguntas = Pergunta.objects.filter(questionario=questionario)
@@ -323,7 +332,7 @@ def verificar_temas(questionario):
     return temas, tema_texto
 
 ##################### GUSTAVO ##############################################
-
+@handle_db_errors
 def consultarQuestionario(request, id):
     user = get_user(request)
     if user.groups.filter(name="Administrador").exists():
@@ -376,7 +385,7 @@ def consultarQuestionario(request, id):
 
 
     
-
+@handle_db_errors
 def validarQuestionario(request, id):
     #user_check_var = user_check(request=request, user_profile=[Administrador])
     #if not user_check_var.get('exists'):
@@ -402,6 +411,7 @@ def validarQuestionario(request, id):
         return redirect('utilizadores:mensagem',7002) #O Utilizador não possui permissoões para validar um questionario
     
 from django.utils.timezone import now
+@handle_db_errors
 def validar_publicados(request):
     if request.user.groups.filter(name="Administrador").exists():
         questionarios = Questionario.objects.filter(estado__id='pub', data_fim_publicacao__lt=now().date())
@@ -409,7 +419,7 @@ def validar_publicados(request):
         for questionario in questionarios:
             questionario.estado = estado_indisponivel
             questionario.save()
-    
+@handle_db_errors   
 def rejeitarQuestionario(request, id):
     #user_check_var = user_check(request=request, user_profile=[Administrador])
     #if not user_check_var.get('exists'):
@@ -433,7 +443,7 @@ def rejeitarQuestionario(request, id):
             return redirect('utilizadores:mensagem',7005) #O questionario solicitado não pode ser Rejeitado
     else:
         return redirect('utilizadores:mensagem',7004) #O Utilizador não possui permissoões para rejeitar um questionario
-    
+@handle_db_errors
 def publicarQuestionario(request, id):
     #user_check_var = user_check(request=request, user_profile=[Administrador])
     #if not user_check_var.get('exists'):
@@ -460,7 +470,7 @@ def publicarQuestionario(request, id):
             return redirect('utilizadores:mensagem',7007)#O questionario solicitado não pode ser Publicado
     else:
         return redirect('utilizadores:mensagem',7006) #O utilizador não possui permissões para publicar um questionario
-    
+@handle_db_errors    
 def despublicarQuestionario(request, id):
     #user_check_var = user_check(request=request, user_profile=[Administrador])
     #if not user_check_var.get('exists'):
@@ -484,7 +494,7 @@ def despublicarQuestionario(request, id):
     else:
         return redirect('utilizadores:mensagem',7009)
         
-
+@handle_db_errors
 def arquivarQuestionario(request, id):
     if request.user.groups.filter(name="Administrador").exists():
         questionario = get_object_or_404(Questionario, id=id)
@@ -496,7 +506,7 @@ def arquivarQuestionario(request, id):
     else:
         return redirect('utilizadores:mensagem',7011)
 
-
+@handle_db_errors
 def desarquivarQuestionario(request, id):
     if request.user.groups.filter(name="Administrador").exists():
         questionario = get_object_or_404(Questionario, id=id)
@@ -507,7 +517,7 @@ def desarquivarQuestionario(request, id):
             return redirect('utilizadores:mensagem',7014)
     else:
         return redirect('utilizadores:mensagem',7013)
-        
+       
 def draw_watermark(c):
     c.saveState()
     c.setFont("Helvetica", 200)
@@ -517,7 +527,7 @@ def draw_watermark(c):
     c.rotate(45)
     c.drawCentredString(0, 0, "Draft")
     c.restoreState()
-
+@handle_db_errors
 def exportar_questionarios_draft_pdf(request, id):
     user = get_user(request)
     if user.groups.filter(name = "Administrador").exists():
@@ -606,7 +616,7 @@ def exportar_questionarios_draft_pdf(request, id):
 def clean_string(text):
     """Clean string to remove non-printable characters and strip leading/trailing spaces."""
     return re.sub(r'[\x00-\x1f\x7f-\x9f]+', '', text.strip())
-
+@handle_db_errors
 def exportar_questionarios_pdf(request, id):
     user = get_user(request)
     if user.groups.filter(name = "Administrador").exists():
@@ -689,7 +699,7 @@ def exportar_questionarios_pdf(request, id):
         return FileResponse(buf, as_attachment=True, filename=f"questionario_{slugify(questionario.nome)}.pdf")
     else:
         return redirect('utilizadores:mensagem',7016)
-
+@handle_db_errors
 @csrf_exempt
 def enviar_motivo_rejeicao(request, id):
     if request.method == 'POST':
@@ -724,7 +734,7 @@ def enviar_motivo_rejeicao(request, id):
             return JsonResponse({'error': str(e)}, status=500)
     else:
         return JsonResponse({'error': 'Método não permitido'}, status=405)
-
+@handle_db_errors
 @csrf_exempt
 def reverterIndisponivel(request, id):
     if request.method == 'POST':
@@ -759,6 +769,7 @@ def reverterIndisponivel(request, id):
 #############################################################################
 
 #NAO TA SENDO USADO
+@handle_db_errors
 def desvalidarQuestionario(request, id):
     #user_check_var = user_check(request=request, user_profile=[Administrador])
     #if not user_check_var.get('exists'):

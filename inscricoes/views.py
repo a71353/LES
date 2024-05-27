@@ -1,3 +1,4 @@
+from django.db import OperationalError
 from django.shortcuts import get_object_or_404, redirect, render
 from inscricoes.models import Inscricao, Inscricaosessao, Responsavel, Inscricaotransporte, OpUltimaHora, Escola
 from inscricoes.utils import add_vagas_sessao, enviar_mail_confirmacao_inscricao, init_form, nao_tem_permissoes, render_pdf, save_form, update_context, update_post
@@ -40,7 +41,19 @@ from questionariosPublicados.models import *
 # Create your views here.
 import json
 
+def handle_db_errors(view_func):
+    def wrapper(request, *args, **kwargs):
+        try:
+            return view_func(request, *args, **kwargs)
+        except OperationalError as e:
+            print(f"Database error encountered: {e}")
+            return render(request, "db_error.html", status=503)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return render(request, "db_error.html", status=503)
+    return wrapper
 
+@handle_db_errors
 def op_ultima_hora_pdf(request, pk):
     inscricao = get_object_or_404(OpUltimaHora, pk=pk)
     ano = inscricao.ano
@@ -51,7 +64,7 @@ def op_ultima_hora_pdf(request, pk):
     }
     return render_pdf("inscricoes/op_ultima_hora_pdf.html", context, f"dia_aberto_ualg_{ano}.pdf")
 
-
+@handle_db_errors
 def InscricaoPDF(request, pk):
     """ View que gera um PDF com os detalhes da inscrição """
     inscricao = get_object_or_404(Inscricao, pk=pk)
@@ -96,7 +109,7 @@ class CriarInscricao(SessionWizardView):
         ('almoco', AlmocoForm),
         ('sessoes', SessoesForm),
     ]
-
+    @handle_db_errors
     def dispatch(self, request, *args, **kwargs):
         _user_check = user_check(request, [Participante])
         if _user_check['exists']:
@@ -136,7 +149,7 @@ class CriarInscricao(SessionWizardView):
 
     def get_template_names(self):
         return [f'inscricoes/inscricao_wizard_{self.steps.current}.html']
-
+    @handle_db_errors
     def post(self, request, *args, **kwargs):
         # Envia a informação extra necessária para o formulário atual, após preenchê-lo.
         # Necessário para algumas validações especiais de backend, como verificar o número de alunos
@@ -202,7 +215,7 @@ class ConsultarInscricao(View):
         'sessoes',
         'submissao'
     ]
-
+    @handle_db_errors
     def get(self, request, pk, step=0, alterar=False):
         inscricao = get_object_or_404(Inscricao, pk=pk)
         erro_permissoes = nao_tem_permissoes(request, inscricao)
@@ -220,7 +233,7 @@ class ConsultarInscricao(View):
                    }
         update_context(context, self.step_names[step], inscricao=inscricao)
         return render(request, f"{self.template_prefix}_{self.step_names[step]}.html", context)
-
+    @handle_db_errors
     def post(self, request, pk, step=0, alterar=False):
         inscricao = get_object_or_404(Inscricao, pk=pk)
         erro_permissoes = nao_tem_permissoes(request, inscricao)
@@ -289,7 +302,7 @@ class ConsultarInscricoes(SingleTableMixin, FilterView):
 class MinhasInscricoes(ConsultarInscricoes):
     """ View que gera uma tabela com as inscrições do participante """
     template_name = 'inscricoes/consultar_inscricoes_participante.html'
-
+    @handle_db_errors
     def dispatch(self, request, *args, **kwargs):
         user_check_var = user_check(
             request=request, user_profile=[Participante])
@@ -305,7 +318,7 @@ class InscricoesUO(ConsultarInscricoes):
     """ View que gera uma tabela com as inscrições com pelo menos uma sessão do departamento
     do coordenador """
     template_name = 'inscricoes/consultar_inscricoes_coordenador.html'
-
+    @handle_db_errors
     def dispatch(self, request, *args, **kwargs):
         user_check_var = user_check(request=request, user_profile=[
             Coordenador])
@@ -331,7 +344,7 @@ class InscricoesUO(ConsultarInscricoes):
 class InscricoesAdmin(ConsultarInscricoes):
     """ View que gera uma tabela com as todas as inscrições """
     template_name = 'inscricoes/consultar_inscricoes_admin.html'
-
+    @handle_db_errors
     def dispatch(self, request, *args, **kwargs):
         user_check_var = user_check(request=request, user_profile=[
             Administrador])
@@ -345,7 +358,7 @@ class InscricoesAdmin(ConsultarInscricoes):
             map(lambda x: (x.id, x.nome), Departamento.objects.all()))
         return context
 
-
+@handle_db_errors
 def ApagarInscricao(request, pk):
     """ View que apaga uma inscrição """
     inscricao = get_object_or_404(Inscricao, pk=pk)
@@ -361,11 +374,11 @@ def ApagarInscricao(request, pk):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
-
+@handle_db_errors
 def op_ultima_hora_admin(request):
     op_ultima_hora_signups = OpUltimaHora.objects.all()
     return render(request, 'inscricoes/op_ultima_hora_admin.html', {'op_ultima_hora_signups': op_ultima_hora_signups})
-
+@handle_db_errors
 def op_ultima_hora_create(request):
     if request.method == 'POST':
         form = OpUltimaHoraForm(request.POST)
@@ -383,14 +396,14 @@ def op_ultima_hora_create(request):
         form = OpUltimaHoraForm()
     
     return render(request, 'inscricoes/op_ultima_hora_form.html', {'form': form})
-
+@handle_db_errors
 def op_ultima_hora_delete(request, pk):
     signup = get_object_or_404(OpUltimaHora, pk=pk)
     
     signup.delete()
     messages.success(request, 'Inscrição de última hora excluída com sucesso!')
     return redirect('inscricoes:op-ultima-hora-admin')
-
+@handle_db_errors
 def op_ultima_hora_edit(request, pk):
     signup = get_object_or_404(OpUltimaHora, pk=pk)
     if request.method == 'POST':
@@ -401,7 +414,7 @@ def op_ultima_hora_edit(request, pk):
     else:
         form = OpUltimaHoraForm(instance=signup)
     return render(request, 'inscricoes/op_ultima_hora_form.html', {'form': form})
-
+@handle_db_errors
 def presentes(request, pk):
     inscricao = get_object_or_404(Inscricao, pk=pk)
 
@@ -424,7 +437,7 @@ def presentes(request, pk):
         'inscricao': inscricao,
         'nalunos': inscricao.nalunos  # Aqui passamos o valor de nalunos
     })
-
+@handle_db_errors
 def estatisticas(request, diaabertoid=None):
     """ View que mostra as estatísticas do Dia Aberto """
     user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -458,7 +471,7 @@ def estatisticas(request, diaabertoid=None):
         'meios': Inscricao.MEIO_TRANSPORTE_CHOICES,
     })
 
-
+@handle_db_errors
 def tipo_estatistica(request):
     dias_abertos = Diaaberto.objects.order_by('-ano').all()  # Ordenar por ano de forma descendente
     selected_year = dias_abertos[0].id if dias_abertos else None  # Pegar o ID do primeiro objeto, que é o mais recente
@@ -469,7 +482,7 @@ def tipo_estatistica(request):
     })
 
 
-
+@handle_db_errors
 def estatisticaAtividade(request, diaabertoid=None):
     """ View que mostra as estatísticas do Dia Aberto baseadas nas respostas ao questionário """
     user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -588,7 +601,7 @@ def estatisticaAtividade(request, diaabertoid=None):
         'roteiros': roteiros
     })
 
-
+@handle_db_errors
 def estatisticaporAtividade(request, atividadeid):
     """ View que mostra as estatísticas de uma atividade específica baseadas nas respostas ao questionário """
     user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -676,7 +689,7 @@ def estatisticaporAtividade(request, atividadeid):
 
 
 
-
+@handle_db_errors
 def estatisticaporRoteiro(request, roteiroid=None):
     """ View que mostra as estatísticas de um roteiro específico baseadas nas respostas ao questionário """
     user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -763,7 +776,7 @@ def estatisticaporRoteiro(request, roteiroid=None):
 
 
 
-
+@handle_db_errors
 def estatistica_transporte(request, diaabertoid=None):
     """ View que mostra as estatísticas do Dia Aberto baseadas nas respostas ao questionário """
     user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -832,7 +845,7 @@ def estatistica_transporte(request, diaabertoid=None):
         'questionario': questionario,
         'resultados': resultados
     })
-
+@handle_db_errors
 def exportar_estatisticas_csv(request, diaabertoid=None):
 
     # Checar se o usuário é um administrador
@@ -883,7 +896,7 @@ def exportar_estatisticas_csv(request, diaabertoid=None):
     return response
 
 ####################GUstavo##########################
-
+@handle_db_errors
 def estatisticas_almocos(request, diaabertoid=None):
     dias_abertos = Diaaberto.objects.all()
     nome_questionario = None
@@ -992,7 +1005,7 @@ def estatisticas_almocos(request, diaabertoid=None):
                            ,'ano_diaaberto':ano_diaaberto
                            ,'diaabertoID':diaabertoid
                         ,'nome_questionario': nome_questionario});
-
+@handle_db_errors
 def estatisticas_almocos_csv(request):
     user = get_user(request)
     if user.groups.filter(name="Administrador").exists():
@@ -1048,7 +1061,7 @@ def estatisticas_almocos_csv(request):
 from django.http import HttpResponse
 from openpyxl import Workbook
 from django.shortcuts import redirect
-
+@handle_db_errors
 def estatisticas_almocos_excel(request):
     user = get_user(request)
     if not user.groups.filter(name="Administrador").exists():
@@ -1111,7 +1124,7 @@ def estatisticas_almocos_excel(request):
 
 
 
-
+@handle_db_errors
 def exportar_para_csv(request):
     diaabertoID = request.GET.get('diaaberto')  # Pegue o ID do Dia Aberto do parâmetro da URL
     
@@ -1157,7 +1170,7 @@ def exportar_para_csv(request):
     return response
 
 
-
+@handle_db_errors
 def presençaInscricao(request,inscricao_id):
     user_check_var = user_check(request=request, user_profile=[Administrador])
     if user_check_var.get('exists') == False:
@@ -1172,7 +1185,7 @@ def presençaInscricao(request,inscricao_id):
                   })
 
 
-
+@handle_db_errors
 def estatisticas_diaAberto(request, diaabertoid=None):
     """ View que mostra as estatísticas do Dia Aberto baseadas nas respostas ao questionário """
     user_check_var = user_check(request=request, user_profile=[Administrador])

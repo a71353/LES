@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.db import OperationalError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.http import HttpRequest, HttpResponse
 
@@ -28,7 +29,19 @@ from questionarios.models import EstadoQuestionario
 from questionarios.tables import EstadosTable
 
 
-# Create your views here.
+
+def handle_db_errors(view_func):
+    def wrapper(request, *args, **kwargs):
+        try:
+            return view_func(request, *args, **kwargs)
+        except OperationalError as e:
+            print(f"Database error encountered: {e}")
+            return render(request, "db_error.html", status=503)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return render(request, "db_error.html", status=503)
+    return wrapper
+
 
 class TimeC():
 	time: str = None
@@ -96,13 +109,13 @@ class viewDays(SingleTableMixin, FilterView):
 		'per_page': 10
 	}
 
-
+	@handle_db_errors
 	def dispatch(self, request, *args, **kwargs):
 		user_check_var = user_check(request=request, user_profile=[Administrador])
 		if not user_check_var.get('exists'): return user_check_var.get('render')
 
 		return super().dispatch(request, *args, **kwargs)
-		
+	
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
 		earliest = Diaaberto.objects.all().order_by('ano').first()	#Obtain some constants
@@ -121,7 +134,7 @@ class viewDays(SingleTableMixin, FilterView):
 		context["is_open"] = is_open
 		return context
 
-
+@handle_db_errors
 def newDay(request, id=None):
 
 	user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -152,7 +165,7 @@ def newDay(request, id=None):
 	return render(request=request,
 				template_name = 'configuracao/diaAbertoForm.html',
 				context = {'form': dia_aberto_form})
-
+@handle_db_errors
 def delDay(request, id=None):
 
 	user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -171,12 +184,12 @@ class verMenus(SingleTableMixin, FilterView):
 	table_pagination = {
 		'per_page': 10
 	}
-
+	@handle_db_errors
 	def dispatch(self, request, *args, **kwargs):
 		user_check_var = user_check(request=request, user_profile=[Administrador])
 		if not user_check_var.get('exists'): return user_check_var.get('render')
 		return super().dispatch(request, *args, **kwargs)
-		
+	
 	def get_context_data(self, **kwargs):
 		context = super(SingleTableMixin, self).get_context_data(**kwargs)
 		table = self.get_table(**self.get_table_kwargs())
@@ -184,7 +197,7 @@ class verMenus(SingleTableMixin, FilterView):
 		context["campi"] = list(map(lambda x: (x.id, x.nome), Campus.objects.all()))
 		context[self.get_context_table_name(table)] = table
 		return context
-
+@handle_db_errors
 def newMenu(request, id = None):
 
 	user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -217,7 +230,7 @@ def newMenu(request, id = None):
 				  template_name='configuracao/menuForm.html',
 				  context = {'form': menu_form, 'formset': prato_form_set}
 				)
-
+@handle_db_errors
 def delMenu(request, id = None):
 
 	user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -236,7 +249,7 @@ def menuPratoFormset(extra = 0, minVal = 1, max = 1000):
 			'nrpratosdisponiveis': '# Pratos'
 		}, extra = extra, min_num = minVal, max_num = max, can_delete=True)
 	return formSets
-
+@handle_db_errors
 def delPrato(request, id):
 
 	user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -246,7 +259,7 @@ def delPrato(request, id):
 	menuid=prato.menuid.id
 	prato.delete()
 	return redirect('configuracao:novoPrato',menuid)
-
+@handle_db_errors
 def newPratoRow(request):
 	value = int(request.POST.get('extra'))
 	data = {
@@ -256,7 +269,7 @@ def newPratoRow(request):
 		'form_id': 'form-' + str(value-1) + '-id',
 	}
 	return render(request=request, template_name='configuracao/menuPratoRow.html', context=data)
-
+@handle_db_errors
 def getDias(request):
 	options = []
 	default = {
@@ -294,7 +307,7 @@ class verTransportes(SingleTableMixin, FilterView):
 	table_pagination = {
 		'per_page': 10
 	}
-
+	@handle_db_errors
 	def dispatch(self, request, *args, **kwargs):
 		user_check_var = user_check(request=request, user_profile=[Administrador])
 		if not user_check_var.get('exists'): return user_check_var.get('render')
@@ -305,7 +318,7 @@ class verTransportes(SingleTableMixin, FilterView):
 		context["campi"] = list(map(lambda x: (x.nome, x.nome), Campus.objects.all()))
 		return context
 
-
+@handle_db_errors
 def criarTransporte(request, id = None):
 
 	user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -370,7 +383,7 @@ def transporteHorarioFormset(extra = 0, minVal = 1):
 			'horaChegada': CustomTimeWidget(attrs={'class': 'input'}),
 		}, extra = extra, min_num = minVal, can_delete=True)
 	return formSets
-
+@handle_db_errors
 def newHorarioRow(request):
 	value = int(request.POST.get('extra'))
 	data = {
@@ -382,7 +395,7 @@ def newHorarioRow(request):
 	}
 	return render(request=request, template_name='configuracao/transporteHorarioEmptyRow.html', context=data)
 
-
+@handle_db_errors
 def eliminarTransporte(request, id):
 
 	user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -391,7 +404,7 @@ def eliminarTransporte(request, id):
 	Transportehorario.objects.get(id=id).delete()
 	return redirect('configuracao:verTransportes')
 
-
+@handle_db_errors
 def atribuirTransporte(request, id):
 
 	user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -458,7 +471,7 @@ def atribuirTransporte(request, id):
 	return render(request = request,
 				  template_name='configuracao/atribuirTransporte.html',
 				  context={'transporte': transportehorario,  "inscricoestransporte": inscricaotransporte, "vagas": transportevagas, 'chegadapartida': dadoschepart})
-
+@handle_db_errors
 def eliminarAtribuicao(request, id):
 
 	user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -476,7 +489,7 @@ class verEdificios(SingleTableMixin, FilterView):
 	table_pagination = {
 		'per_page': 10
 	}
-
+	@handle_db_errors
 	def dispatch(self, request, *args, **kwargs):
 		user_check_var = user_check(request=request, user_profile=[Administrador])
 		if not user_check_var.get('exists'): return user_check_var.get('render')
@@ -491,7 +504,7 @@ class verEdificios(SingleTableMixin, FilterView):
 		context[self.get_context_table_name(table)] = table
 		return context
 
-
+@handle_db_errors
 def configurarEdificio(request, id = None):
 
 	user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -527,7 +540,7 @@ def configurarEdificio(request, id = None):
 				template_name='configuracao/criarEdificio.html',
 				context={'form':edificioForm,
 						'formset':formSet})
-
+@handle_db_errors
 def newEspacoRow(request):
 	value = int(request.POST.get('extra'))
 	data = {
@@ -537,7 +550,7 @@ def newEspacoRow(request):
 		'form_id': 'form-' + str(value-1) + '-id',
 	}
 	return render(request=request, template_name='configuracao/edificioEspacoRow.html', context=data)
-
+@handle_db_errors
 def eliminarEdificio(request,id):
 
 	user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -546,7 +559,7 @@ def eliminarEdificio(request,id):
 	Edificio.objects.get(id=id).delete()
 	return redirect('configuracao:verEdificios')
 
-
+@handle_db_errors
 def verEdificioImagem(request,id = None):
 
 	if id is None:
@@ -569,13 +582,14 @@ class verTemas(SingleTableMixin, FilterView):
 	table_pagination = {
 		'per_page': 10
 	}
+	@handle_db_errors
 	def dispatch(self, request, *args, **kwargs):
 		user_check_var = user_check(request=request, user_profile=[Administrador])
 		if not user_check_var.get('exists'): return user_check_var.get('render')
 		return super().dispatch(request, *args, **kwargs)
 
 
-
+@handle_db_errors
 def configurarTema(request, id = None):
 
 	user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -597,7 +611,7 @@ def configurarTema(request, id = None):
 	return	render(request=request,
 				template_name='configuracao/criarTema.html',
 				context={'form':temaForm})
-
+@handle_db_errors
 def eliminarTema(request,id):
 
 	user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -616,13 +630,14 @@ class verTemasQ(SingleTableMixin, FilterView):
 	table_pagination = {
 		'per_page': 10
 	}
+	@handle_db_errors
 	def dispatch(self, request, *args, **kwargs):
 		user_check_var = user_check(request=request, user_profile=[Administrador])
 		if not user_check_var.get('exists'): return user_check_var.get('render')
 		return super().dispatch(request, *args, **kwargs)
 
 
-
+@handle_db_errors
 def configurarTemaQ(request, id=None):
     user_check_var = user_check(request=request, user_profile=[Administrador])
     if not user_check_var.get('exists'):
@@ -645,7 +660,7 @@ def configurarTemaQ(request, id=None):
 
     return render(request, 'configuracao/criarTemaQ.html', {'form': temaForm})
 
-
+@handle_db_errors
 def eliminarTemaQ(request, id):
 
     tema = TemaQ.objects.filter(id=id).first()
@@ -664,12 +679,12 @@ class verUOs(SingleTableMixin, FilterView):
 	table_pagination = {
 		'per_page': 10
 	}
-
+	@handle_db_errors
 	def dispatch(self, request, *args, **kwargs):
 		user_check_var = user_check(request=request, user_profile=[Administrador])
 		if not user_check_var.get('exists'): return user_check_var.get('render')
 		return super().dispatch(request, *args, **kwargs)
-		
+
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
 		context["campi"] = list(map(lambda x: (x.id, x.nome), Campus.objects.all()))
@@ -684,18 +699,18 @@ class verUOs(SingleTableMixin, FilterView):
 	table_pagination = {
 		'per_page': 10
 	}
-
+	@handle_db_errors
 	def dispatch(self, request, *args, **kwargs):
 		user_check_var = user_check(request=request, user_profile=[Administrador])
 		if not user_check_var.get('exists'): return user_check_var.get('render')
 		return super().dispatch(request, *args, **kwargs)
-		
+
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
 		context["campi"] = list(map(lambda x: (x.id, x.nome), Campus.objects.all()))
 		return context
 
-
+@handle_db_errors
 def configurarUO(request, id = None):
 
 	user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -731,7 +746,7 @@ def uOFormset(extra = 0, minVal = 1):
 			'campusid': Select(attrs={'class': 'input'}),
 		}, extra = extra, min_num = minVal, can_delete=True)
 	return formSets
-
+@handle_db_errors
 def newUORow(request):
 	value = int(request.POST.get('extra'))
 	data = {
@@ -741,7 +756,7 @@ def newUORow(request):
 		'form_id': 'form-' + str(value-1) + '-id',
 	}
 	return render(request=request, template_name='configuracao/UORow.html', context=data)
-
+@handle_db_errors
 def eliminarUO(request, id):
 
 	user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -758,18 +773,18 @@ class verDepartamentos(SingleTableMixin, FilterView):
 	table_pagination = {
 		'per_page': 10
 	}
-
+	@handle_db_errors
 	def dispatch(self, request, *args, **kwargs):
 		user_check_var = user_check(request=request, user_profile=[Administrador])
 		if not user_check_var.get('exists'): return user_check_var.get('render')
 		return super().dispatch(request, *args, **kwargs)
-		
+
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
 		context["facs"] = list(map(lambda x: (x.id, x.nome), Unidadeorganica.objects.all()))
 		return context
 
-
+@handle_db_errors
 def configurarDepartamento(request, id = None):
 
 	user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -805,7 +820,7 @@ def departamentoFormset(extra = 0, minVal = 1):
 			'unidadeorganicaid': Select(attrs={'class': 'input'}),
 		}, extra = extra, min_num = minVal, can_delete=True)
 	return formSets
-
+@handle_db_errors
 def newDepartamentoRow(request):
 	value = int(request.POST.get('extra'))
 	data = {
@@ -816,7 +831,7 @@ def newDepartamentoRow(request):
 		'options': Unidadeorganica.objects.all()
 	}
 	return render(request=request, template_name='configuracao/departamentoRow.html', context=data)
-
+@handle_db_errors
 def eliminarDepartamento(request, id):
 
 	user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -833,18 +848,18 @@ class verCursos(SingleTableMixin, FilterView):
 	table_pagination = {
 		'per_page': 10
 	}
-
+	@handle_db_errors
 	def dispatch(self, request, *args, **kwargs):
 		user_check_var = user_check(request=request, user_profile=[Administrador])
 		if not user_check_var.get('exists'): return user_check_var.get('render')
 		return super().dispatch(request, *args, **kwargs)
-		
+
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
 		context["faculdades"] = list(map(lambda x: (x.id, x.nome), Unidadeorganica.objects.all()))
 		return context
 
-
+@handle_db_errors
 def configurarCurso(request, id = None):
 
 	user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -880,7 +895,7 @@ def cursoFormSet(extra = 0, minVal = 1):
 			'unidadeorganicaid': Select(attrs={'class': 'input'}),
 		}, extra = extra, min_num = minVal, can_delete=True)
 	return formSets
-
+@handle_db_errors
 def newCursoRow(request):
 	value = int(request.POST.get('extra'))
 	data = {
@@ -891,7 +906,7 @@ def newCursoRow(request):
 		'options': Unidadeorganica.objects.all()
 	}
 	return render(request=request, template_name='configuracao/departamentoRow.html', context=data)
-
+@handle_db_errors
 def eliminarCurso(request, id):
 
 	user_check_var = user_check(request=request, user_profile=[Administrador])
@@ -901,7 +916,6 @@ def eliminarCurso(request, id):
 	return redirect('configuracao:verCursos')
 
 
-
 class verEstados(SingleTableMixin, FilterView):
 	table_class = EstadosTable
 	template_name = 'configuracao/listaEstados.html'
@@ -909,11 +923,12 @@ class verEstados(SingleTableMixin, FilterView):
 	table_pagination = {
 		'per_page': 10
 	}
+	@handle_db_errors
 	def dispatch(self, request, *args, **kwargs):
 		user_check_var = user_check(request=request, user_profile=[Administrador])
 		if not user_check_var.get('exists'): return user_check_var.get('render')
 		return super().dispatch(request, *args, **kwargs)
-	
+@handle_db_errors	
 def adicionarEstado(request):
     user_check_var = user_check(request=request, user_profile=[Administrador])
     if not user_check_var.get('exists'):
@@ -932,7 +947,7 @@ def adicionarEstado(request):
 
     return render(request, 'configuracao/adicionarEstado.html', {'form': form})
 
-
+@handle_db_errors
 def configurarEstado(request, id):
     user_check_var = user_check(request=request, user_profile=[Administrador])
     if not user_check_var.get('exists'):
@@ -953,7 +968,7 @@ def configurarEstado(request, id):
 
     return render(request, 'configuracao/adicionarEstado.html', {'form': form, 'estado': estado})
 
-
+@handle_db_errors
 def eliminarEstado(request, id):
     user_check_var = user_check(request=request, user_profile=[Administrador])
     if not user_check_var.get('exists'):

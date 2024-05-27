@@ -1,3 +1,4 @@
+from django.db import OperationalError
 from django.http import HttpResponse
 from .models import *
 from utilizadores.models import *
@@ -22,6 +23,18 @@ from .forms import *
 
 from django.http import HttpResponseRedirect
 
+def handle_db_errors(view_func):
+    def wrapper(request, *args, **kwargs):
+        try:
+            return view_func(request, *args, **kwargs)
+        except OperationalError as e:
+            print(f"Database error encountered: {e}")
+            return render(request, "db_error.html", status=503)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return render(request, "db_error.html", status=503)
+    return wrapper
+@handle_db_errors
 def apagar_notificacao_automatica(request, id ,nr):
     ''' Apagar uma notificação automática '''
     if request.user.is_authenticated:
@@ -41,7 +54,7 @@ def apagar_notificacao_automatica(request, id ,nr):
     response['Location'] += '?page='+page
     return response
 
-
+@handle_db_errors
 def limpar_notificacoes(request, id):
     ''' Apagar notificacoes de um utilizadore por categorias '''
     if request.user.is_authenticated:
@@ -73,7 +86,7 @@ def limpar_notificacoes(request, id):
 
 
 
-
+@handle_db_errors
 def marcar_como_lida(request):
     ''' Marcar todas as notificações de um utilizador como lidas '''
     if request.user.is_authenticated:
@@ -87,7 +100,7 @@ def marcar_como_lida(request):
 
 
 
-
+@handle_db_errors
 def sem_notificacoes(request, id):
     ''' Página quando não existem notificacoes '''
     if request.user.is_authenticated:
@@ -101,7 +114,7 @@ def sem_notificacoes(request, id):
 
 
 
-
+@handle_db_errors
 def categorias_notificacao_automatica(request, id, nr):
     ''' Ver notificações automáticas por categorias '''
     if request.user.is_authenticated:
@@ -158,7 +171,7 @@ def categorias_notificacao_automatica(request, id, nr):
 
 
 
-
+@handle_db_errors
 def enviar_notificacao_automatica(request, sigla, id):
     ''' Envio de notificação automatica '''
     if request.user.is_authenticated:
@@ -308,7 +321,7 @@ def enviar_notificacao_automatica(request, sigla, id):
 
 ######################################################### Mensagens #####################################################
 
-
+@handle_db_errors
 def escolher_tipo(request):
     ''' Escolher tipo de mensagem a enviar, poderá ser uma mensagem de grupo ou individual '''
     if request.user.is_authenticated:
@@ -317,7 +330,7 @@ def escolher_tipo(request):
         return redirect('utilizadores:mensagem', 5)
     return render(request, 'notificacoes/escolher_tipo_mensagem.html')
 
-
+@handle_db_errors
 def concluir_envio(request):
     ''' Página de sucesso quando a mensagem é enviada '''
     if request.user.is_authenticated:
@@ -327,7 +340,7 @@ def concluir_envio(request):
     return render(request, 'notificacoes/concluir_envio.html')
 
 
-
+@handle_db_errors
 def criar_mensagem(request, id):
     ''' Criar uma nova mensagem tomando em consideração o tipo de utilizador que está logado atualmente no sistema '''
     if request.user.is_authenticated: 
@@ -347,7 +360,7 @@ def criar_mensagem(request, id):
 
 
 
-
+@handle_db_errors
 def criar_mensagem_participante(request, id):
     ''' Criar uma nova mensagem por um participante '''
     msg = False
@@ -429,7 +442,7 @@ def criar_mensagem_participante(request, id):
 
 
 
-
+@handle_db_errors
 def criar_mensagem_uo(request, id):
     ''' Criar uma nova mensagem por um colaborador, coordenador ou docente '''
     msg = False
@@ -535,7 +548,7 @@ def criar_mensagem_uo(request, id):
             return redirect("utilizadores:mensagem",5)
 
 
-
+@handle_db_errors
 def criar_mensagem_admin(request, id):
     ''' Criar uma nova mensagem por um administrador '''
     msg = False
@@ -631,7 +644,7 @@ def criar_mensagem_admin(request, id):
     
 
 
-
+@handle_db_errors
 def apagar_mensagem(request, id ,nr):
     ''' Apagar uma mensagem '''
     if request.user.is_authenticated:
@@ -660,7 +673,7 @@ def apagar_mensagem(request, id ,nr):
 
 
 
-
+@handle_db_errors
 def limpar_mensagens(request, id):
     ''' Apagar mensagens por categorias de um dado utilizador '''
     if request.user.is_authenticated:
@@ -688,7 +701,7 @@ def limpar_mensagens(request, id):
 
 
 
-
+@handle_db_errors
 def mensagem_como_lida(request, id):
     ''' Marcar todas as mensagens de um utilizador como lidas '''
     if request.user.is_authenticated:
@@ -706,7 +719,7 @@ def mensagem_como_lida(request, id):
 
 
 
-
+@handle_db_errors
 def sem_mensagens(request, id):
     ''' Página quando não existem mensagens '''
     if request.user.is_authenticated:
@@ -720,7 +733,7 @@ def sem_mensagens(request, id):
 
 
 
-
+@handle_db_errors
 def detalhes_mensagens(request, id, nr):
     ''' Ver mensagens por categorias '''
     if request.user.is_authenticated:

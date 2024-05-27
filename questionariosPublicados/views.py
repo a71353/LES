@@ -1,4 +1,5 @@
 
+from django.db import OperationalError
 from .models import *
 from utilizadores.views import user_check
 from .tables import QuestionarioTable
@@ -43,6 +44,18 @@ from .models import Resposta, Resposta_Individual
 from django.http import JsonResponse
 from datetime import datetime
 from configuracao.models import *
+
+def handle_db_errors(view_func):
+    def wrapper(request, *args, **kwargs):
+        try:
+            return view_func(request, *args, **kwargs)
+        except OperationalError as e:
+            print(f"Database error encountered: {e}")
+            return render(request, "db_error.html", status=503)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return render(request, "db_error.html", status=503)
+    return wrapper
 
 # Create your views here.
 class ListaQuestionarios(SingleTableMixin, FilterView):
@@ -112,7 +125,7 @@ def responderQuestionario(request, id):
         return redirect('utilizadores:mensagem',1009)
 '''
 
-#antigo
+@handle_db_errors
 def responderQuestionario3(request, id):
     questionario = Questionario.objects.get(id=id)
     perguntas = Pergunta.objects.filter(questionario=id).order_by('tema__tema', 'id').select_related('tema')
@@ -175,6 +188,7 @@ def responderQuestionario3(request, id):
         return redirect('utilizadores:mensagem', 8000)
     
 #novo(nao aparece o tema "atividade" caso a inscricao nao pussua)
+@handle_db_errors
 def responderQuestionario(request, id):
     questionario = Questionario.objects.get(id=id)
     perguntas = Pergunta.objects.filter(questionario=id).order_by('tema__tema', 'id').select_related('tema')
@@ -252,6 +266,7 @@ def responderQuestionario(request, id):
         })
 
 
+@handle_db_errors
 #novo(analisa o codigo)  
 def verificarResponderQuestionario(request): 
     anoCorrente = datetime.now().year
@@ -289,6 +304,7 @@ def verificarResponderQuestionario(request):
 
 
 #antigo
+@handle_db_errors
 def verificarResponderQuestionario3(request): 
     anoCorrente = datetime.now().year
     diaabertoAtual = Diaaberto.objects.filter(ano=anoCorrente)
@@ -316,7 +332,7 @@ def verificarResponderQuestionario3(request):
                     return redirect('utilizadores:mensagem',8004) 
     else:
         return redirect('utilizadores:mensagem',8000) #nao é participante
-
+@handle_db_errors
 def verificar_codigo(request, codigo):
     if Inscricao.objects.filter(codigo=codigo).exists():
         inscricao = Inscricao.objects.get(codigo=codigo)

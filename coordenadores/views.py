@@ -1,3 +1,4 @@
+from django.db import OperationalError
 from django.shortcuts import render, redirect  
 from .models import *
 from .forms import *
@@ -19,6 +20,18 @@ from utilizadores.views import user_check
 from django.http.response import HttpResponse
 from atividades.models import Sessao
 
+def handle_db_errors(view_func):
+    def wrapper(request, *args, **kwargs):
+        try:
+            return view_func(request, *args, **kwargs)
+        except OperationalError as e:
+            print(f"Database error encountered: {e}")
+            return render(request, "db_error.html", status=503)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return render(request, "db_error.html", status=503)
+    return wrapper
+@handle_db_errors
 def adicionartarefa(request,id=None):
     user_check_var = user_check(request=request, user_profile=[Coordenador])
     if not user_check_var.get('exists'): return user_check_var.get('render')
@@ -46,7 +59,7 @@ def adicionartarefa(request,id=None):
     return render(request = request,template_name='coordenadores/criarTarefa.html',context={
         'tarefa':tarefa,
     })
-
+@handle_db_errors
 def tipoTarefa(request):  
     user_check_var = user_check(request=request, user_profile=[Coordenador])
 
@@ -84,7 +97,7 @@ def tipoTarefa(request):
     if template != '':         
         return render(request=request,template_name=template,context={'form':form,'options':atividades,'ativ':ativ})
     else: return HttpResponse()
-
+@handle_db_errors
 def diasAtividade(request):
     dias=[] 
     default = {
@@ -107,7 +120,7 @@ def diasAtividade(request):
                 template_name='configuracao/dropdown.html',
                 context={'options':dias, 'default': default}
             )
-
+@handle_db_errors
 def sessoesAtividade(request):
     atividade= request.POST['atividadeid']
     dia = str(request.POST['dia'])
@@ -141,7 +154,7 @@ def sessoesAtividade(request):
                 template_name='configuracao/dropdown.html',
                 context={'options': options, 'default': default}
             )
-
+@handle_db_errors
 def colaboradores(request):
     default=[]
     horario = ''
@@ -199,7 +212,7 @@ def colaboradores(request):
                 template_name='configuracao/dropdown.html',
                 context={'options':options, 'default': default}
             )
-
+@handle_db_errors
 def grupoInfo(request):
     info = ''
     responsavel = ''
@@ -214,7 +227,7 @@ def grupoInfo(request):
                 template_name='coordenadores/grupoInfo.html',
                 context={'info': info,'responsavel':responsavel}
             )
-
+@handle_db_errors
 def diasGrupo(request):
     dias=[]
     default=[]
@@ -239,7 +252,7 @@ def diasGrupo(request):
                 template_name='configuracao/dropdown.html',
                 context={'options':dias, 'default': default}
             )
-
+@handle_db_errors
 def horarioGrupo(request):
     horario = []
     dia = request.POST['dia']
@@ -266,7 +279,7 @@ def horarioGrupo(request):
                 template_name='configuracao/dropdown.html',
                 context={'options':horario, 'default': default}
             )
-
+@handle_db_errors
 def locaisOrigem(request):
     origens = []
     dia = request.POST['dia']
@@ -302,7 +315,7 @@ def locaisOrigem(request):
                 template_name='configuracao/dropdown.html',
                 context={'options':origens, 'default': default}
             )  
-
+@handle_db_errors
 def locaisDestino(request):
     grupo = request.POST.get('grupo_id')
     dia = request.POST['dia']
@@ -343,16 +356,16 @@ class ConsultarTarefas(SingleTableMixin, FilterView):
     table_pagination = {
 		'per_page': 10
 	}
-
+    @handle_db_errors
     def dispatch(self, request, *args, **kwargs):
         user_check_var = user_check(request=request, user_profile=[Coordenador])
         if not user_check_var.get('exists'): return user_check_var.get('render')
         self.user = user_check_var.get('firstProfile')
         return super().dispatch(request, *args, **kwargs)
-
+    @handle_db_errors
     def get_queryset(self):
         return Tarefa.objects.filter(coord=self.user).order_by('-created_at')
-
+    @handle_db_errors
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         table = self.get_table(**self.get_table_kwargs())
@@ -361,7 +374,7 @@ class ConsultarTarefas(SingleTableMixin, FilterView):
         table.colabs = list(map(lambda x: (x.id, x.full_name), Colaborador.objects.filter(faculdade = self.user.faculdade,utilizador_ptr_id__valido=True)))
         context[self.get_context_table_name(table)] = table
         return context
-
+@handle_db_errors
 def eliminartarefa(request,id):
     user_check_var = user_check(request=request, user_profile=[Coordenador])
     if not user_check_var.get('exists'): return user_check_var.get('render')
@@ -375,7 +388,7 @@ def eliminartarefa(request,id):
             tarefa.delete()    
             return redirect('coordenadores:consultarTarefa')
     return redirect('coordenadores:consultarTarefa')
-
+@handle_db_errors
 def atribuirColaborador(request,id):
     user_check_var = user_check(request=request, user_profile=[Coordenador])
     if not user_check_var.get('exists'): return user_check_var.get('render')

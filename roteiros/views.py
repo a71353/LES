@@ -1,3 +1,4 @@
+from django.db import OperationalError
 from django.forms import ValidationError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -31,6 +32,18 @@ from roteiros.filters import *
 from django.utils.timezone import now
 
 
+def handle_db_errors(view_func):
+    def wrapper(request, *args, **kwargs):
+        try:
+            return view_func(request, *args, **kwargs)
+        except OperationalError as e:
+            print(f"Database error encountered: {e}")
+            return render(request, "db_error.html", status=503)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return render(request, "db_error.html", status=503)
+    return wrapper
+
 class RoteiroCoordenador(SingleTableMixin, FilterView):
     
     table_class = CoordRoteiroTable
@@ -40,24 +53,24 @@ class RoteiroCoordenador(SingleTableMixin, FilterView):
 		'per_page': 10
 	}
     
-
+    @handle_db_errors
     def dispatch(self, request, *args, **kwargs):
         user_check_var = user_check(request=request, user_profile=[Coordenador])
         if not user_check_var.get('exists'): return user_check_var.get('render')
         self.user_check_var = user_check_var
         return super().dispatch(request, *args, **kwargs)
-        
+
     def get_queryset(self):
         return Roteiro.objects.filter(coordenadorID=self.user_check_var.get('firstProfile')).order_by('-id')
     
 
-
+@handle_db_errors
 def roteiros(request):
     roteiros = Roteiro.objects.all()
     return render(request, 'roteiros/meusRoteiros.html',{'roteiro': roteiros})
 
 # selecionar atividades por unidade organica
-
+@handle_db_errors
 def proporRoteiro(request):
     user_check_var = user_check(request=request, user_profile=[Coordenador])
     if user_check_var.get('exists') == False:
@@ -113,7 +126,7 @@ def proporRoteiro(request):
 
 
 
-
+@handle_db_errors
 def inserirsessaoRoteiro(request, id):
 
     user_check_var = user_check(request=request, user_profile=[Coordenador])
@@ -194,7 +207,7 @@ def inserirsessaoRoteiro(request, id):
     
             
            
-
+@handle_db_errors
 def verresumo(request,id):
 
     user_check_var = user_check(request=request, user_profile=[Coordenador])
@@ -231,7 +244,7 @@ def verresumo(request,id):
                                 'm':'Não tem permissões para esta ação!'
                             })
     
-    
+@handle_db_errors    
 def confirmarResumo(request,id):
     user_check_var = user_check(request=request, user_profile=[Coordenador])
     if user_check_var.get('exists') == False: return user_check_var.get('render')
@@ -272,7 +285,7 @@ def horariofimRoteiro(inicio,duracao):
     return fim   
 
 
-
+@handle_db_errors
 def eliminarSessaoRoteiro(request,id):
     user_check_var = user_check(request=request, user_profile=[Coordenador])
     if user_check_var.get('exists') == False: return user_check_var.get('render')
@@ -302,7 +315,7 @@ def eliminarSessaoRoteiro(request,id):
                             })
     
 
-
+@handle_db_errors
 def eliminarRoteiro(request,id):
     user_check_var = user_check(request=request, user_profile=[Coordenador])
     if user_check_var.get('exists') == False: return user_check_var.get('render')
@@ -330,7 +343,7 @@ def eliminarRoteiro(request,id):
                                 'm':'Não tem permissões para esta ação!'
                             })
     
-
+@handle_db_errors
 def escolherDiaAberto2(request, id):
     roteiro_original = Roteiro.objects.filter(id=id).first()
  
@@ -344,7 +357,7 @@ def escolherDiaAberto2(request, id):
 
     return render(request, 'roteiros/duplicarRoteiro.html', {'dias_abertos': dias_abertos, 'roteiro_id': id})
     
-
+@handle_db_errors
 def escolherDiaAberto(request, id):
     atividade = Atividade.objects.filter(id=id).first()
     roteiro_original = atividade.roteiro
@@ -369,7 +382,7 @@ def escolherDiaAberto(request, id):
 
     return render(request, 'roteiros/duplicarRoteiro.html', {'dias_abertos': dias_abertos, 'roteiro_id': roteiro_original.id})
     
- 
+@handle_db_errors
 def duplicarRoteiro(request, id, novo_diaaberto_id):
     
     roteiro_original = Roteiro.objects.filter(id=id).first()
@@ -425,7 +438,7 @@ def duplicarRoteiro(request, id, novo_diaaberto_id):
             'tipo': 'error',
             'm': 'Roteiro não encontrado ou você não tem permissão para duplicar este roteiro.'
         })
-    
+
 def adjust_session_date(original_date, novo_diaaberto):
     start_date = novo_diaaberto.datadiaabertoinicio.date()
     end_date = novo_diaaberto.datadiaabertofim.date()
@@ -434,7 +447,7 @@ def adjust_session_date(original_date, novo_diaaberto):
         return original_date
     return start_date 
 
-
+@handle_db_errors
 def alterarRoteiro(request,id):
     atividade = Atividade.objects.filter(id=id).first()
     roteiro = atividade.roteiro
@@ -508,7 +521,7 @@ def alterarRoteiro(request,id):
                             })
     
 
-
+@handle_db_errors
 def alterarRoteiro2(request,id):
     roteiro = Roteiro.objects.filter(id=id).first()
     user_check_var = user_check(request=request, user_profile=[Coordenador])
@@ -581,7 +594,7 @@ def alterarRoteiro2(request,id):
                             })
     
     
-
+@handle_db_errors
 def verRelatorio(request, id):
     # Check if the user has the required profile to view the report
     roteiros = get_object_or_404(Roteiro,pk=id)
@@ -601,7 +614,7 @@ def verRelatorio(request, id):
 
 
 
-
+@handle_db_errors
 def verTodosRelatorios(request):
     ano_atual = datetime.now().year
     dia_aberto_atual = Diaaberto.objects.filter(ano=ano_atual).first()
@@ -641,7 +654,7 @@ def verTodosRelatorios(request):
 
 
 
-
+@handle_db_errors
 def eliminarRoteiro(request,id):
     user_check_var = user_check(request=request, user_profile=[Coordenador])
     if user_check_var.get('exists') == False: return user_check_var.get('render')
@@ -670,7 +683,7 @@ def eliminarRoteiro(request,id):
                             })
     
     
-    
+@handle_db_errors    
 def eliminarRoteiro2(request, id):
     user_check_var = user_check(request=request, user_profile=[Coordenador])
     if not user_check_var.get('exists'):
