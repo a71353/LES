@@ -15,14 +15,15 @@ from django.shortcuts import render, redirect, get_object_or_404
 def handle_db_errors(view_func):
     def wrapper(request, *args, **kwargs):
         try:
-            return view_func(request, *args, **kwargs)
+            response = view_func(request, *args, **kwargs)
+            if response is None:
+                raise ValueError("A view retornou None")
+            return response
         except OperationalError as e:
             print(f"Database error encountered: {e}")
             return render(request, "db_error.html", status=503)
-        except Exception as e:
-            print(f"Unexpected error: {e}")
-            return render(request, "db_error.html", status=503)
     return wrapper
+
 @handle_db_errors
 def estatisticas_almocos(request):
     user = get_user(request)

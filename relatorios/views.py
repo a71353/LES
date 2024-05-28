@@ -38,14 +38,15 @@ from django.http import JsonResponse
 def handle_db_errors(view_func):
     def wrapper(request, *args, **kwargs):
         try:
-            return view_func(request, *args, **kwargs)
+            response = view_func(request, *args, **kwargs)
+            if response is None:
+                raise ValueError("A view retornou None")
+            return response
         except OperationalError as e:
             print(f"Database error encountered: {e}")
             return render(request, "db_error.html", status=503)
-        except Exception as e:
-            print(f"Unexpected error: {e}")
-            return render(request, "db_error.html", status=503)
     return wrapper
+
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -150,6 +151,7 @@ def relatorio_transporte(request, ano=None, rep=None):
         return render_pdf(request, "relatorios/relatorio_transporte.html", context, filename, save_file=True)
     else:
         return render_pdf(request, "relatorios/relatorio_transporte.html", context, filename)
+    
 @handle_db_errors
 def relatorio_transporte_dia(request, ano=None, rep=None, day=None):
     """View que gera um PDF com os detalhes das inscrições para um dado ano e dia do diaaberto"""
@@ -201,57 +203,55 @@ def relatorio_transporte_dia(request, ano=None, rep=None, day=None):
     else:
         return render_pdf(request, "relatorios/relatorio_transporte.html", context, filename)
 
-@handle_db_errors
 def relatorio_transporte_csv(request, ano=None, rep=None):
+    try:
+        dia_aberto = Diaaberto.objects.get(ano=ano)
+        inscricoes = Inscricao.objects.filter(diaaberto_id=dia_aberto.id)
 
-    dia_aberto = Diaaberto.objects.get(ano=ano)
-    inscricoes = Inscricao.objects.filter(diaaberto_id=dia_aberto.id)
+        if not inscricoes.exists():
+            return redirect('utilizadores:mensagem2', 20)
 
-    if not inscricoes.exists():
-        return redirect('utilizadores:mensagem2', 20)
+        transportes_existentes = Inscricaotransporte.objects.filter(inscricao__in=inscricoes).exists()
+        if not transportes_existentes:
+            return redirect('utilizadores:mensagem6', 1)
 
-    # Antes de prosseguir, verifique se existem transportes
-    transportes_existentes = Inscricaotransporte.objects.filter(inscricao__in=inscricoes).exists()
-    if not transportes_existentes:
-        return redirect('utilizadores:mensagem6', 1)
+        buffer = io.StringIO()
+        writer = csv.writer(buffer, delimiter=';')
+        # Header with the year of the event
+        writer.writerow(['Relatório de Transportes do Dia Aberto', ano])
+        writer.writerow(['Inscricao ID', 'Escola', 'Meio de Transporte', 'Origem', 'Chegada', 'Hora Partida', 'Hora Chegada', 'Capacidade', 'Numero de Passageiros'])
 
-    buffer = io.StringIO()
-    writer = csv.writer(buffer, delimiter=';')
-    writer.writerow(['', 'Inscricao ID', 'Escola', 'Meio de Transporte', 'Origem', 'Chegada', 'Hora Partida', 'Hora Chegada', 'Capacidade', 'Numero de Passageiros'])
-    inscricoes_por_dia = {}
-    for inscricao in inscricoes:
-        dia_inscricao = inscricao.dia  
-        if dia_inscricao not in inscricoes_por_dia:
-            inscricoes_por_dia[dia_inscricao] = []
-        inscricoes_por_dia[dia_inscricao].append(inscricao)
+        inscricoes_por_dia = {}
+        for inscricao in inscricoes:
+            dia_inscricao = inscricao.dia  
+            if dia_inscricao not in inscricoes_por_dia:
+                inscricoes_por_dia[dia_inscricao] = []
+            inscricoes_por_dia[dia_inscricao].append(inscricao)
 
-    for dia, inscricoes_dia in inscricoes_por_dia.items():
-        populate_csv_transportes(writer, dia, inscricoes_dia)
+        for dia, inscricoes_dia in inscricoes_por_dia.items():
+            populate_csv_transportes(writer, dia, inscricoes_dia)
 
-    if rep == 'yes':
-        filepath = os.path.join(RELATORIOS_DIR, f"transportes_dia_aberto_{ano}.csv")
-        with open(filepath, 'w', newline='', encoding='utf-8') as file:
-            file.write(buffer.getvalue())
+        if rep == 'yes':
+            filepath = os.path.join(RELATORIOS_DIR, f"transportes_dia_aberto_{ano}.csv")
+            with open(filepath, 'w', newline='', encoding='utf-8') as file:
+                file.write(buffer.getvalue())
 
-    buffer.seek(0)
-    response = HttpResponse(buffer, content_type='text/csv')
-    response['Content-Disposition'] = f'attachment; filename="transportes_dia_aberto_{ano}.csv"'
-    return response
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="transportes_dia_aberto_{ano}.csv"'
+        return response
+    except Diaaberto.DoesNotExist:
+        return redirect('utilizadores:mensagem2', 21)
 
 def populate_csv_transportes(writer, dia, inscricoes_dia):
-    # Adiciona uma linha em branco para separar os dias
-    writer.writerow([])  # Linha em branco para separação visual
-    # Escreve uma linha com o dia para marcar o início de um novo conjunto de dados
+    writer.writerow([])
     writer.writerow([f'Dia {dia}'])
-    # Opcionalmente repete os cabeçalhos de coluna para cada dia
-    writer.writerow(['', 'Inscricao ID', 'Escola', 'Meio de Transporte', 'Origem', 'Chegada', 'Hora Partida', 'Hora Chegada', 'Capacidade', 'Numero de Passageiros'])
-    
+    writer.writerow(['Inscricao ID', 'Escola', 'Meio de Transporte', 'Origem', 'Chegada', 'Hora Partida', 'Hora Chegada', 'Capacidade', 'Numero de Passageiros'])
     for inscricao in inscricoes_dia:
         transportes = Inscricaotransporte.objects.filter(inscricao=inscricao)
         for transporte_inscricao in transportes:
             transporte_horario = transporte_inscricao.transporte
             writer.writerow([
-                '',  # Coluna vazia para alinhamento
                 inscricao.id,
                 inscricao.escola.nome,
                 inscricao.meio_transporte,
@@ -262,7 +262,6 @@ def populate_csv_transportes(writer, dia, inscricoes_dia):
                 transporte_horario.get_capacidade,
                 transporte_inscricao.npassageiros
             ])
-
 @handle_db_errors
 def relatorio_transporte_csv_dia(request, ano=None, rep=None, day=None):
     """View que gera um CSV com os detalhes das inscrições de transporte para um dado ano e dia do diaaberto"""
