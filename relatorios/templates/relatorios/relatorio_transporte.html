@@ -231,7 +231,7 @@
     </div>
 {% endfor %}
 
-
+{% if transportes_inscricoes|length > 1 %}
 <div class="last-page-break">
     <div class="page-header">
         <img src="{{ logo_url }}" alt="UAlg Logo">
@@ -276,6 +276,7 @@
         </tbody>
     </table>
 </div>
+{% endif %}
 
 
 </html>

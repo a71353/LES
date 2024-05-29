@@ -33,12 +33,12 @@ from questionarios.tables import EstadosTable
 def handle_db_errors(view_func):
     def wrapper(request, *args, **kwargs):
         try:
-            return view_func(request, *args, **kwargs)
+            response = view_func(request, *args, **kwargs)
+            if response is None:
+                raise ValueError("A view retornou None")
+            return response
         except OperationalError as e:
             print(f"Database error encountered: {e}")
-            return render(request, "db_error.html", status=503)
-        except Exception as e:
-            print(f"Unexpected error: {e}")
             return render(request, "db_error.html", status=503)
     return wrapper
 
@@ -645,7 +645,10 @@ def configurarTemaQ(request, id=None):
 
     tema = None
     if id is not None:
-        tema = TemaQ.objects.get(id=id)
+        try:
+            tema = TemaQ.objects.get(id=id)
+        except TemaQ.DoesNotExist:
+            return redirect('alguma_url_para_tratar_erro')  # Redirecionar para uma página de erro ou lista
 
     if request.method == 'POST':
         temaForm = TemaQForm(data=request.POST, instance=tema)
@@ -654,11 +657,12 @@ def configurarTemaQ(request, id=None):
             tema.save()
             return redirect('configuracao:verTemasQ')
         else:
-            return redirect('utilizadores:mensagem5', 10)
+            return redirect('utilizadores:mensagem5', 10)  # Certifique-se de que este redirecionamento é desejado
     else:
         temaForm = TemaQForm(instance=tema)
 
     return render(request, 'configuracao/criarTemaQ.html', {'form': temaForm})
+
 
 @handle_db_errors
 def eliminarTemaQ(request, id):
