@@ -51,12 +51,12 @@ import json
 def handle_db_errors(view_func):
     def wrapper(request, *args, **kwargs):
         try:
-            response = view_func(request, *args, **kwargs)
-            if response is None:
-                raise ValueError("A view retornou None")
-            return response
+            return view_func(request, *args, **kwargs)
         except OperationalError as e:
             print(f"Database error encountered: {e}")
+            return render(request, "db_error.html", status=503)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
             return render(request, "db_error.html", status=503)
     return wrapper
 

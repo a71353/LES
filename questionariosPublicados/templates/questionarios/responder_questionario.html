@@ -84,19 +84,34 @@
 {% endblock content %}
 {% block scripts %}
 <script>
-  function updateButtonAppearance(radio) {
-    var labels = document.querySelectorAll('#radio-group-' + radio.name.replace('respostas[', '').replace(']', '') + ' label');
-    labels.forEach(function(label) {
-      label.style.backgroundColor = '#ccc'; // Default background color
-      label.style.color = '#000'; // Default text color
-      label.style.border = '1px solid transparent'; // Remove visible border
+  document.addEventListener('DOMContentLoaded', function() {
+    // Seleciona todos os inputs do tipo rádio e adiciona event listeners
+    var allRadios = document.querySelectorAll('input[type="radio"]');
+    allRadios.forEach(function(radio) {
+      radio.addEventListener('change', function() {
+        // Reseta a cor de todos os botões
+        resetAllButtons(radio.name);
+        // Atualiza a cor do botão selecionado
+        var label = document.querySelector('label[for="' + radio.id + '"]');
+        if (label) {
+          label.style.backgroundColor = '#2574D2'; // Cor quando selecionado
+          label.style.color = 'white'; // Cor do texto quando selecionado
+        }
+      });
     });
-    var selectedLabel = document.querySelector('label[for="' + radio.id + '"]');
-    if (selectedLabel) {
-      selectedLabel.style.backgroundColor = '#2574D2'; // Background color when selected
-      selectedLabel.style.color = 'white'; // Text color when selected
-      selectedLabel.style.border = '1px solid #007bff'; // Border color when selected
-    }
+  });
+
+  function resetAllButtons(groupName) {
+    // Seleciona todos os labels de um grupo específico de rádios
+    var groupSelector = 'input[name="' + groupName + '"]';
+    var radios = document.querySelectorAll(groupSelector);
+    radios.forEach(function(radio) {
+      var label = document.querySelector('label[for="' + radio.id + '"]');
+      if (label) {
+        label.style.backgroundColor = '#ccc'; // Cor padrão
+        label.style.color = '#000'; // Cor do texto padrão
+      }
+    });
   }
 </script>
 {% endblock scripts %}
