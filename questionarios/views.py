@@ -58,6 +58,9 @@ def handle_db_errors(view_func):
         except OperationalError as e:
             print(f"Database error encountered: {e}")
             return render(request, "db_error.html", status=503)
+        except Exception as e:
+            print(f"Database error encountered: {e}")
+            return render(request, "db_error.html", status=503)
     return wrapper
 
 # Create your views here.

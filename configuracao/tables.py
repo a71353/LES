@@ -83,17 +83,8 @@ class TemaQTable(tables.Table):
 
         if tema_em_uso:
             # Se o tema estiver em uso, desative ou oculte os botões de edição e exclusão
-            return format_html("""
-                <div>
-                    <span class="icon is-small">
-                        <i class="mdi mdi-circle-edit-outline mdi-24px" style="color: grey;"></i>
-                    </span>
-                    &nbsp;
-                    <span class="icon is-small">
-                        <i class="mdi mdi-trash-can-outline mdi-24px" style="color: grey;"></i>
-                    </span>
-                </div>
-            """)
+            return format_html("<div>Tema a ser usado num questionário</div>")
+
         else:
             # Se o tema não estiver em uso, mostre os botões normalmente
             return format_html(f"""

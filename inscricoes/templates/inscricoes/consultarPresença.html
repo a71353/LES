@@ -19,10 +19,10 @@
                 <div class="box">
                     <div class="columns">
                         <div class="column is-6">
-                            {% if sessao.sessao.atividadeid.nome %}
+                            
                                 <p><strong>Atividade:</strong> {{ sessao.sessao.atividadeid.nome }}</p>
-                            {% else %}
-                                <p><strong>Roteiro:</strong> {{ sessao.sessao.roteiro.nome }}</p>
+                            {% if sessao.sessao.roteiroid %}
+                                <p><strong>Roteiro:</strong> {{ sessao.sessao.roteiroid.nome }}</p>
                             {% endif %}
                         </div>
                         <div class="column is-6">
