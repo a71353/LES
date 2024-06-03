@@ -79,13 +79,18 @@ def proporRoteiro(request):
     try:
        diaabertopropostas=Diaaberto.objects.get(datapropostasatividadesincio__lte=today,dataporpostaatividadesfim__gte=today)
     except Diaaberto.DoesNotExist:
-        return render(request, 'mensagem.html', {
-            'tipo': 'error',
-            'mensagem': 'O Periodo de propor Roteiros ja acabou'
-        })
+         return render(request=request,
+                          template_name='mensagem.html',
+                          context={'tipo': 'error', 'm': 'A data para propor Roteiros ja terminou'})
 
     coordenador = Coordenador.objects.get(utilizador_ptr_id=request.user.id)
     unidade_organica = coordenador.faculdade
+    atividades = Atividade.objects.filter(professoruniversitarioutilizadorid__faculdade=unidade_organica, estado='Aceite')
+
+    if not atividades.exists():
+        return render(request=request,
+                          template_name='mensagem.html',
+                          context={'tipo': 'error', 'm': 'Não existem atividades para este dia aberto'})
  
     
     diainicio= diaabertopropostas.datadiaabertoinicio.date()
@@ -110,6 +115,7 @@ def proporRoteiro(request):
                     'url': reverse('roteiros:proporRoteiro')  # Ajuste 'home' para a URL de redirecionamento desejada
                 })
             else:
+                print("aaaaaaaaaaaaaaaaaaaaaaa")
                 atividades_selecionadas = Atividade.objects.filter(id__in=atividades_ids)
                 maior_duracao = atividades_selecionadas.aggregate(maior_duracao=Max('duracaoesperada'))['maior_duracao']
                 countAtividades = atividades_selecionadas.count()
@@ -619,10 +625,17 @@ def verTodosRelatorios(request):
     ano_atual = datetime.now().year
     dia_aberto_atual = Diaaberto.objects.filter(ano=ano_atual).first()
 
-    roteiros = Roteiro.objects.filter(diaabertoid=dia_aberto_atual)
 
+    if not dia_aberto_atual:
+        return render(request, 'mensagem.html', {'tipo': 'error', 'm': 'Não há dia aberto para o ano atual.'})
+
+    roteiros = Roteiro.objects.filter(diaabertoid=dia_aberto_atual)
+    
     dados_roteiros = []
     atividades_todas = Atividade.objects.filter(roteiro__isnull=True, diaabertoid=dia_aberto_atual, estado='Aceite')
+
+    if not roteiros.exists()  and not atividades_todas.exists():
+        return render(request, 'mensagem.html', {'tipo': 'error', 'm': 'Não existe atividades nem roteiros associados a este dia Aberto.'})
     
     # Estrutura para armazenar atividades com suas sessões
     atividades_com_sessoes = []
@@ -701,7 +714,13 @@ def eliminarRoteiro2(request, id):
                       template_name='mensagem.html',
                       context={'tipo': 'error', 'm': 'Roteiro não encontrado!'})
 
-    # Verifica se o dia aberto está a decorrer
+    diaabertopropostas = Diaaberto.objects.filter(datapropostasatividadesincio__lte=now(),dataporpostaatividadesfim__gte=now()).first()   
+    if diaabertopropostas:
+       return render(request=request,
+                      template_name='mensagem.html',
+                      context={'tipo': 'error', 'm': 'O periodo de propor e eliminar roteiros ja terminou !'})
+
+
     dia_aberto = Diaaberto.objects.filter(datadiaabertoinicio__lte=now(), datadiaabertofim__gte=now()).first()
     if dia_aberto:
         return render(request=request,
@@ -718,7 +737,7 @@ def eliminarRoteiro2(request, id):
     if roteiro:
         # views.enviar_notificacao_automatica(request, "roteiroEliminado", id) # Enviar Notificação Automática
         roteiro.delete()
-        return redirect('roteiros:criarRoteiro')
+        return redirect('atividades:atividadesUOrganica')
     else:
         return render(request=request,
                       template_name='mensagem.html',
