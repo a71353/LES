@@ -13,15 +13,13 @@
             <nav aria-label="breadcrumbs" class="breadcrumb">
                 <ul>
                     <li><a href="/">Início</a></li>
-                    <li class="is-active"><a href="/estatisticas/estatisticas_almocos">Consultar estatísticas de almoços {{selecionado}}</a>
-                    </li>
+                    <li class="is-active"><a href="/estatisticas/estatisticas_almocos">Consultar estatísticas de almoços {{selecionado}}</a></li>
                 </ul>
             </nav>
             {% if nome_questionario %}
             <h3 class="title is-4" style="color: #7A7A7A; font-size: 1.0rem;">Questionário: <span style="color: black;">{{ nome_questionario }}</span></h3>
             <h3 class="title is-4" style="color: #7A7A7A; font-size: 1.0rem;">Data de Publicação: <span style="color: black;">{{ data_publicacao }}</span></h3>
             <h3 class="title is-4" style="color: #7A7A7A; font-size: 1.0rem;">Data de Expiração: <span style="color: black;">{{ data_expiracao }}</span></h3>
-            
             {% endif %}
             {% if respostas == "True" %}
                 <div style="display: flex; align-items: center; margin-bottom: 20px;">
@@ -33,41 +31,29 @@
                         </thead>
                         <tbody style="background-color: aliceblue;">
                             <tr>
-                                <td style="text-align: center;">
-                                    {{ participantes }}
-                                </td>
+                                <td style="text-align: center;">{{ participantes }}</td>
                             </tr>
                         </tbody>
                     </table>
-                    <button id="exportPDF" style="font-size: 18px; padding: 12px 24px; background-color: black; color: white; border: none; border-radius: 8px; cursor: pointer; margin-right: 10px;">
-                        Exportar para PDF
-                    </button>
-                    <a href="{% url 'inscricoes:estatisticas_almocos_csv' %}?diaaberto={{ diaabertoID }}" class="button is-primary" style="margin-right: 10px;">
-                        Exportar para CSV
-                    </a>
-                    <a href="{% url 'inscricoes:estatisticas_almocos_excel' %}?diaaberto={{ diaabertoID }}" class="button is-primary" style="margin-right: 10px;">
-                        Exportar para excel
-                    </a>
+                    <button id="exportPDF" style="font-size: 18px; padding: 12px 24px; background-color: black; color: white; border: none; border-radius: 8px; cursor: pointer; margin-right: 10px;">Exportar para PDF</button>
+                    <a href="{% url 'inscricoes:estatisticas_almocos_csv' %}?diaaberto={{ diaabertoID }}" class="button is-primary" style="margin-right: 10px;">Exportar para CSV</a>
+                    <a href="{% url 'inscricoes:estatisticas_almocos_excel' %}?diaaberto={{ diaabertoID }}" class="button is-primary" style="margin-right: 10px;">Exportar para Excel</a>
                 </div>
                 As informações dos gráficos estão em Porcentagens "%"
-                <div>&nbsp;</div>
-                {% for grafico in respostas_almocos_escolhas_multiplas %}
-                    <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 2rem;">
+                <div style="display: flex; flex-wrap: wrap; justify-content: space-around;">
+                    {% for grafico in respostas_almocos_escolhas_multiplas %}
+                    <div style="flex: 1 0 45%; display: flex; flex-direction: column; align-items: center; margin-bottom: 2rem;">
                         <p style="font-size: 18px; margin-bottom: 1rem;">{{ forloop.counter }}: {{ grafico.pergunta }}</p>
-                        <div style="height: 600px; width: 600px;">
+                        <div style="height: 350px; width: 350px;"> <!-- Reduzido de 600px para 350px -->
                             <canvas id="chart{{ grafico.id }}"></canvas>
                         </div>
                     </div>
-                {% endfor %}
-                <div>&nbsp;</div>
+                    {% endfor %}
+                </div>
             {% elif respostas == "No" %}
-                <div style="height: 650px; width: 650px; margin-left: 20%; color: black; font-size: 24px;">
-                    Não há questionários para o Dia Aberto {{ ano_diaaberto }}
-                </div>
+                <div style="height: 650px; width: 650px; margin-left: 20%; color: black; font-size: 24px;">Não há questionários para o Dia Aberto {{ ano_diaaberto }}</div>
             {% elif respostas == "False" %}
-                <div style="height: 650px; width: 650px; margin-left: 20%; color: black; font-size: 24px;">
-                    Nenhum participante respondeu ao Questionário
-                </div>
+                <div style="height: 650px; width: 650px; margin-left: 20%; color: black; font-size: 24px;">Nenhum participante respondeu ao Questionário</div>
             {% endif %}
         </div>
     </div>
@@ -109,12 +95,12 @@
         },
         methods: {
             corAleatoria() {
-                // Geração de cores claras
-                var r = Math.floor(Math.random() * 156) + 100; // Valores entre 100 e 255 para vermelho
-                var g = Math.floor(Math.random() * 156) + 100; // Valores entre 100 e 255 para verde
-                var b = Math.floor(Math.random() * 156) + 100; // Valores entre 100 e 255 para azul
-                var alpha = 0.6; // Aumentando a opacidade para melhor contraste
-                return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+                // Geração de cores mais claras e vivas
+                var r = Math.floor(Math.random() * 128) + 127; // Valores entre 127 e 255 para vermelho
+                var g = Math.floor(Math.random() * 128) + 127; // Valores entre 127 e 255 para verde
+                var b = Math.floor(Math.random() * 128) + 127; // Valores entre 127 e 255 para azul
+                var alpha = 0.7; // Opacidade um pouco mais alta para melhor contraste
+                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
             },
             criarGraficodeBarras(id, dados, labels, colors) {
                 var name = "chart" + id;
@@ -160,52 +146,53 @@
             },
             
             exportarPDF() {
-                var doc = new jspdf.jsPDF();
-                var nome_questionario = "Questionario: " + "{{ nome_questionario }}";
+                var doc = new jspdf.jsPDF({
+                    orientation: 'portrait',
+                    unit: 'pt',
+                    format: 'a4'
+                });
+            
+                var nome_questionario = "Questionário: " + "{{ nome_questionario }}";
                 var tema_questionario = "Tema: Almoço";
-                var data_publicada = "Data de Publicação: " + "{{ data_publicacao }}";
-                var data_expiracao = "Data de Expiração: " + "{{ data_expiracao }}";
-                var y = 20;
-                doc.text(10, 10, nome_questionario);
-                doc.text(10, y, tema_questionario);
-                y += 10;
-                doc.text(10, y, data_publicada);
-                y += 10;
-                doc.text(10, y, data_expiracao);
-                y += 10;
+                var data_publicada = "{{ data_publicacao }}";
+                var data_expiracao = "{{ data_expiracao }}";
                 var pageWidth = doc.internal.pageSize.getWidth();
-                var imgWidth = 150;
-                for (let i = 0; i < this.respostas.length; i++) {
-                    if (y > 150) {
+                var pageHeight = doc.internal.pageSize.getHeight();
+                var margin = 40;
+                var y = 140;
+            
+                doc.setFontSize(12);
+                doc.text(nome_questionario, margin, 30);
+                doc.text("Data de Publicação: " + data_publicada, margin, 50);
+                doc.text("Data de Expiração: " + data_expiracao, margin, 70);
+            
+                this.respostas.forEach(function(resposta, index) {
+                    if (index % 2 === 0 && index !== 0) {
                         doc.addPage();
-                        y = 10;
+                        y = 140; // Reinicia a posição y para a parte superior da nova página
                     }
-                    var txt = String(i + 1) + ") " + String(this.respostas[i].pergunta);
-                    doc.text(20, y, txt);
-                    y += 10;
-                    var imgData = document.getElementById('chart' + i).toDataURL('image/png');
-                    var x = (pageWidth - imgWidth) / 2;
-                    doc.addImage(imgData, 'PNG', x, y, imgWidth, 150);
-                    y += 170;
-                    var data = [];
-                    var labels = [];
-                    this.respostas[i].respostas.forEach(function(objeto) {
-                        labels.push(objeto.opcao);
-                        var value = String(objeto.count) + "%";
-                        data.push(value);
-                    });
-                    var tableData = [labels, data];
-                    var tableTop = y + 10;
-                    doc.autoTable({
-                        startY: tableTop,
-                        head: [tableData[0]],
-                        body: tableData.slice(1),
-                    });
-                    var tableBottom = doc.lastAutoTable.finalY + 10;
-                    y = tableBottom > y ? tableBottom : y;
-                }
+            
+                    // Adiciona numeração antes do título da pergunta
+                    var title = (index + 1) + ": " + resposta.pergunta;
+                    doc.setFontSize(14); // Aumenta o tamanho da fonte para o título da pergunta
+                    var titleWidth = doc.getTextWidth(title); // Calcula a largura do texto do título
+                    var titleX = (pageWidth - titleWidth) / 2; // Calcula a posição X para centralizar
+                    doc.text(title, titleX, y - 20); // Centraliza o título acima do gráfico
+            
+                    var imgData = document.getElementById('chart' + resposta.id).toDataURL('image/png');
+                    var imgHeight = (pageHeight / 2) - margin * 2.5; // Altura do gráfico
+                    var imgWidth = imgHeight; // Largura mantida proporcional
+            
+                    var x = (pageWidth - imgWidth) / 2; // Centraliza o gráfico horizontalmente
+                    doc.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
+            
+                    y += imgHeight + 60; // Aumenta o espaço para o próximo gráfico
+                });
+            
                 doc.save('graficos.pdf');
             }
+            
+            
         },
     });
 </script>

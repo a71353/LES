@@ -51,15 +51,12 @@ import json
 def handle_db_errors(view_func):
     def wrapper(request, *args, **kwargs):
         try:
-            response = view_func(request, *args, **kwargs)
-            if response is None:
-                raise ValueError("A view retornou None")
-            return response
+            return view_func(request, *args, **kwargs)
         except OperationalError as e:
             print(f"Database error encountered: {e}")
             return render(request, "db_error.html", status=503)
         except Exception as e:
-            print(f"Database error encountered: {e}")
+            print(f"Unexpected error: {e}")
             return render(request, "db_error.html", status=503)
     return wrapper
 
@@ -315,27 +312,53 @@ def verificar_temas(questionario):
     temas = set()
     get_perguntas = Pergunta.objects.filter(questionario=questionario)
     for pergunta in get_perguntas:
-        tema_atual = pergunta.tema.tema.strip()  # Asegura a remoção de espaços extras
+        tema_atual = pergunta.tema.tema.strip() 
+        print(tema_atual) # Asegura a remoção de espaços extras
         temas.add(tema_atual)
 
     tem_almoco = "Almoço" in temas
     tem_transportes = "Transporte" in temas
     tem_atividade = "Atividade" in temas
+    tem_dia_aberto = "Dia Aberto" in temas
 
-    if tem_almoco and tem_transportes:
+    if tem_almoco and tem_transportes and tem_atividade and tem_dia_aberto:
+        tema_texto = "Almoço, Atividade, Dia Aberto e Transporte"
+    elif tem_almoco and tem_transportes and tem_atividade:
+        tema_texto = "Almoço, Atividade e Transporte"
+    elif tem_almoco and tem_dia_aberto and tem_atividade:
+        tema_texto = "Almoço, Atividade e Dia Aberto"
+    elif tem_almoco and tem_transportes and tem_dia_aberto:
+        tema_texto = "Almoço, Dia Aberto e Transporte"
+    elif tem_dia_aberto and tem_transportes and tem_atividade:
+        tema_texto = "Atividade, Dia Aberto e Transporte"
+    elif tem_almoco and tem_transportes:
         tema_texto = "Almoço e Transporte"
+    elif tem_almoco and tem_atividade:
+        tema_texto = "Almoço e Atividade"
+    elif tem_dia_aberto and tem_almoco:
+        tema_texto = "Almoço e Dia Aberto"
+    elif tem_atividade and tem_transportes:
+        tema_texto = "Atividade e Transporte"
+    elif tem_dia_aberto and tem_atividade:
+        tema_texto = "Atividade e Dia Aberto"
+    elif tem_dia_aberto and tem_transportes:
+        tema_texto = "Transporte e Dia Aberto"
     elif tem_almoco:
         tema_texto = "Almoço"
     elif tem_transportes:
         tema_texto = "Transporte"
     elif tem_atividade:
-         tema_texto = "Atividade"
+        tema_texto = "Atividade"
+    elif tem_dia_aberto:
+        tema_texto = "Dia Aberto"
     else:
         tema_texto = "Nenhum tema disponível"
 
     return temas, tema_texto
 
 ##################### GUSTAVO ##############################################
+'''
+
 @handle_db_errors
 def consultarQuestionario(request, id):
     user = get_user(request)
@@ -386,7 +409,69 @@ def consultarQuestionario(request, id):
     else:
         # Tratar caso o usuário não seja um administrador
         return redirect('utilizadores:mensagem',7000) #O Utilizador não possui permissoões para consultar um questionario
+'''
 
+from django.core.paginator import Paginator
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Questionario, Pergunta, OpcaoP
+from django.utils.timezone import now
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+
+@login_required
+@handle_db_errors
+@transaction.atomic
+def consultarQuestionario(request, id):
+    user = get_user(request)
+    if user.groups.filter(name="Administrador").exists():
+        try:
+            questionario = Questionario.objects.get(id=id)
+            nome = questionario.nome
+            autor = questionario.autor
+            data_publicacao = questionario.data_publicada
+            data_expiracao = questionario.data_fim_publicacao
+            estado = questionario.estado.nome
+
+            perguntas_list = Pergunta.objects.filter(questionario=questionario)
+            paginator = Paginator(perguntas_list, 3)  # 5 perguntas por página
+            page_number = request.GET.get('page')
+            perguntas_paginated = paginator.get_page(page_number)
+
+            perguntas = []
+            temas, tema_texto = verificar_temas(questionario)  # Supõe-se que verificar_temas é uma função existente
+
+            for pergunta in perguntas_paginated:
+                perg = {
+                    'texto': pergunta.texto,
+                    'tipo_resposta': pergunta.tipo_resposta,
+                    'tema': pergunta.tema.tema.strip()
+                }
+
+                if pergunta.tipo_resposta == "multipla_escolha":
+                    escolhas = []
+                    get_escolhas = OpcaoP.objects.filter(pergunta=pergunta.pk)
+                    for escolha in get_escolhas:
+                        escolhas.append({'texto_opcao': escolha.texto_opcao})
+                    perg['opcoes'] = escolhas
+
+                perguntas.append(perg)
+
+            return render(request, 'questionarios/consultar_questionario.html', {
+                'perguntas': perguntas,
+                'nome': nome,
+                'autor': autor,
+                'data_publicacao': data_publicacao,
+                'data_expiracao': data_expiracao,
+                'estado': estado,
+                'tema_texto': tema_texto,
+                'data_atual': now().date(),
+                'id': id,
+                'pagina': perguntas_paginated
+            })
+        except Questionario.DoesNotExist:
+            return redirect('utilizadores:mensagem', 7001)  # O questionário solicitado não existe
+    else:
+        return redirect('utilizadores:mensagem', 7000)  # O usuário não possui permissões para consultar um questionário
 
     
 @handle_db_errors
@@ -725,7 +810,7 @@ def enviar_motivo_rejeicao(request, id):
             send_mail(
                 'Motivo da Rejeição do Questionário',
                 motivo,
-                'a71353@ualg.pt',  
+                'a69845@ualg.pt',  
                 [autor.email],  # E-mail do autor
                 fail_silently=False,
             )
@@ -758,7 +843,7 @@ def reverterIndisponivel(request, id):
                 send_mail(
                     'Reversão do Questionário para Pendente',
                     motivo,
-                    'a71353@ualg.pt',
+                    'a69845@ualg.pt',
                     [autor.email],
                     fail_silently=False,
                 )
