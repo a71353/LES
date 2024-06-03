@@ -44,14 +44,15 @@ import json
 def handle_db_errors(view_func):
     def wrapper(request, *args, **kwargs):
         try:
-            return view_func(request, *args, **kwargs)
+            response = view_func(request, *args, **kwargs)
+            if response is None:
+                raise ValueError("A view retornou None")
+            return response
         except OperationalError as e:
             print(f"Database error encountered: {e}")
             return render(request, "db_error.html", status=503)
-        except Exception as e:
-            print(f"Unexpected error: {e}")
-            return render(request, "db_error.html", status=503)
     return wrapper
+
 
 @handle_db_errors
 def op_ultima_hora_pdf(request, pk):
@@ -845,10 +846,10 @@ def estatistica_transporte(request, diaabertoid=None):
         'questionario': questionario,
         'resultados': resultados
     })
+
 @handle_db_errors
 def exportar_estatisticas_csv(request, diaabertoid=None):
 
-    # Checar se o usuário é um administrador
     user_check_var = user_check(request=request, user_profile=[Administrador])
     if not user_check_var.get('exists'):
         return user_check_var.get('render')
@@ -869,9 +870,12 @@ def exportar_estatisticas_csv(request, diaabertoid=None):
 
     # Preparar o CSV
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="estatisticas_transporte.csv"'
+    response['Content-Disposition'] = f'attachment; filename="estatisticas_transporte_{diaaberto.ano}.csv"'
     response.write(u'\ufeff'.encode('utf8'))  # Adiciona o BOM para UTF-8
     writer = csv.writer(response, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    
+    # Write the title row with the year
+    writer.writerow([f'Estatistica de transporte dos questionários do ano: {diaaberto.ano}'])
     writer.writerow(['Pergunta', 'Opção de Resposta', 'Total', 'Percentagem'])
 
     for pergunta in perguntas:
@@ -894,6 +898,7 @@ def exportar_estatisticas_csv(request, diaabertoid=None):
         writer.writerow([])
 
     return response
+
 
 ####################GUstavo##########################
 @handle_db_errors
