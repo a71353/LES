@@ -121,6 +121,7 @@ class Diaaberto(models.Model):
     escalasessoes = models.TimeField(db_column='EscalaSessoes')
 
     questionario = models.ForeignKey('questionarios.Questionario', on_delete=models.SET_NULL, null=True, blank=True, db_column='QuestionarioID', related_name='dias_abertos')
+    
 
     def session_times(self):
 

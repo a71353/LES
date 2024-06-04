@@ -24,7 +24,7 @@ class CoordAtividadesTable(tables.Table):
         self.columns.hide('participantesmaximo')
         self.columns.hide('espacoid')
         self.columns.hide('tema')
-        self.columns.hide('diaabertoid')
+        #self.columns.hide('diaabertoid')
 
     def render_estado(self,record):
         fancy_box = ""
@@ -68,6 +68,9 @@ class CoordAtividadesTable(tables.Table):
         """)
         else:
             return format_html("<div></div>")
+        
+    def render_diaabertoid(self, record):
+        return ', '.join([str(dia) for dia in record.diaabertoid.all()])
 
 
 
@@ -97,7 +100,7 @@ class ProfAtividadesTable(tables.Table):
         self.columns.hide('participantesmaximo')
         self.columns.hide('espacoid')
         self.columns.hide('tema')
-        self.columns.hide('diaabertoid')
+        #self.columns.hide('diaabertoid')
 
     def render_estado(self,record):
         fancy_box = ""

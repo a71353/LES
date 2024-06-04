@@ -364,11 +364,12 @@ def proporatividade(request):
         espacoid=request.POST["espacoid"] 
         espaco=Espaco.objects.get(id=espacoid)  
         new_form = Atividade(professoruniversitarioutilizadorid = ProfessorUniversitario.objects.get(utilizador_ptr_id = request.user.id),
-                             estado = "nsub", diaabertoid = diaabertopropostas,espacoid= Espaco.objects.get(id=espaco.id),
+                             estado = "nsub", espacoid= Espaco.objects.get(id=espaco.id),
                              tema=Tema.objects.get(id=request.POST['tema']))
         activity_object_form = AtividadeForm(request.POST, instance=new_form)
         if activity_object_form.is_valid():  
             activity_object_formed= activity_object_form.save()
+            activity_object_formed.diaabertoid.add(diaabertopropostas)
             new_material= Materiais(atividadeid=activity_object_formed)
             material_object_form= MateriaisForm(request.POST, instance= new_material)
             material_object_form.save()

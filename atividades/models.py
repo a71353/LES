@@ -13,6 +13,7 @@ from coordenadores.models import TarefaAuxiliar
 from datetime import date
 
 from roteiros.models import Roteiro
+from configuracao.models import Diaaberto
 
 class Anfiteatro(models.Model):
     # Field name made lowercase.
@@ -108,8 +109,7 @@ class Atividade(models.Model):
     # Field name made lowercase.
     participantesmaximo = models.IntegerField(db_column='participantesMaximo')
     # Field name made lowercase.
-    diaabertoid = models.ForeignKey(
-        'configuracao.Diaaberto', models.CASCADE, db_column='diaAbertoID')
+    diaabertoid = models.ManyToManyField(Diaaberto, db_column='diaabertoid')
     # Field name made lowercase.
     espacoid = models.ForeignKey(
         'configuracao.Espaco', models.CASCADE, db_column='EspacoID')
