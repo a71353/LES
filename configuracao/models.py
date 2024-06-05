@@ -17,6 +17,8 @@ from django.utils.safestring import mark_safe
 from django.urls.base import reverse
 from django.utils.html import escape
 from django.core.exceptions import NON_FIELD_ERRORS
+
+
 class Transporte(models.Model):
     # Field name made lowercase.
     id = models.AutoField(db_column='ID', primary_key=True)

@@ -343,6 +343,7 @@ def proporatividade(request):
     if user_check_var.get('exists') == False: return user_check_var.get('render')
 
     today= datetime.now(timezone.utc) 
+    
     diaabertopropostas=Diaaberto.objects.get(datapropostasatividadesincio__lte=today,dataporpostaatividadesfim__gte=today)
 
     
@@ -352,7 +353,6 @@ def proporatividade(request):
     dias_diaaberto= []
     for d in range(totaldias.days):
         dias_diaaberto.append(diainicio+timedelta(days=d))
-
     sessoes= ""
     if request.method == "POST":
         
@@ -387,6 +387,9 @@ def horariofim(inicio,duracao):
     minutos= int(calculo%60)
     fim= str(hora)+":"+str(minutos)
     return fim
+
+
+
 @handle_db_errors
 def inserirsessao(request,id):
 

@@ -172,7 +172,7 @@ class AdminAtividadesTable(tables.Table):
         self.columns.hide('participantesmaximo')
         self.columns.hide('espacoid')
         self.columns.hide('tema')
-        self.columns.hide('diaabertoid')
+        #self.columns.hide('diaabertoid')
 
     def render_estado(self,record):
         fancy_box = ""
