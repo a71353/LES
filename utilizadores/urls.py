@@ -39,6 +39,7 @@ urlpatterns = [
     path('mensagem4/<int:id>', views.mensagem4,name='mensagem4'),
     path('mensagem5/<int:id>', views.mensagem5,name='mensagem5'),
     path('mensagem6/<int:id>', views.mensagem6,name='mensagem6'),
+    path('mensagem7/<int:id>', views.mensagem7,name='mensagem7'),
     path('validar/<str:nome>/<int:id>', views.enviar_email_validar,name='validar'),
     path('rejeitar/<str:nome>/<int:id>', views.enviar_email_rejeitar,name='rejeitar'),
     path("logout", logout_action, name="logout"), 
