@@ -145,7 +145,10 @@ def newDay(request, id=None):
 	if id is None:
 		dia_aberto = Diaaberto(administradorutilizadorid=logged_admin)
 	else:
-		dia_aberto = Diaaberto.objects.get(id=id,administradorutilizadorid=logged_admin)
+		try:
+			dia_aberto = Diaaberto.objects.get(id=id,administradorutilizadorid=logged_admin)
+		except:
+			return redirect('utilizadores:mensagem7', 20)
 
 	dia_aberto_form = diaAbertoSettingsForm(instance=dia_aberto)
 
