@@ -435,6 +435,8 @@ def consultarQuestionario(request, id):
             page_number = request.GET.get('page')
             perguntas_paginated = paginator.get_page(page_number)
 
+            mostrar_paginacao = perguntas_paginated.paginator.num_pages > 1
+
             perguntas = []
             temas, tema_texto = verificar_temas(questionario)  # Supõe-se que verificar_temas é uma função existente
 
@@ -464,7 +466,8 @@ def consultarQuestionario(request, id):
                 'tema_texto': tema_texto,
                 'data_atual': now().date(),
                 'id': id,
-                'pagina': perguntas_paginated
+                'pagina': perguntas_paginated,
+                'mostrar_paginacao': mostrar_paginacao
             })
         except Questionario.DoesNotExist:
             return redirect('utilizadores:mensagem', 7001)  # O questionário solicitado não existe
@@ -786,7 +789,7 @@ def exportar_questionarios_pdf(request, id):
         return FileResponse(buf, as_attachment=True, filename=f"questionario_{slugify(questionario.nome)}.pdf")
     else:
         return redirect('utilizadores:mensagem',7016)
-@handle_db_errors
+
 @csrf_exempt
 def enviar_motivo_rejeicao(request, id):
     if request.method == 'POST':
@@ -821,7 +824,7 @@ def enviar_motivo_rejeicao(request, id):
             return JsonResponse({'error': str(e)}, status=500)
     else:
         return JsonResponse({'error': 'Método não permitido'}, status=405)
-@handle_db_errors
+
 @csrf_exempt
 def reverterIndisponivel(request, id):
     if request.method == 'POST':
