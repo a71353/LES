@@ -32,7 +32,7 @@ class InscricaoForm(forms.ModelForm):
     class Meta:
         model = models.Inscricao
         exclude = ('escola', "ninscricao", 'participante',
-                   'meio_transporte', 'hora_chegada', 'local_chegada', 'entrecampi')
+                   'meio_transporte', 'hora_chegada', 'local_chegada', 'entrecampi', 'presentes')
 
     def clean(self):
         cleaned_data = super(InscricaoForm, self).clean()

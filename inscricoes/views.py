@@ -787,18 +787,18 @@ def estatistica_transporte(request, diaabertoid=None):
             ano__lte=datetime.now().year).order_by('-ano').first()
         if not diaabertoid:
             return redirect('utilizadores:mensagem', 18)
-    
+    print(diaabertoid)
     diaaberto = get_object_or_404(Diaaberto, id=diaabertoid)
     if not diaaberto.questionario_id:
         return redirect('utilizadores:mensagem1', 19)
-
+    print(diaaberto.questionario_id)
     questionario = get_object_or_404(Questionario, id=diaaberto.questionario_id)
     tema_transporte = get_object_or_404(TemaQ, tema='Transporte')
 
     perguntas = Pergunta.objects.filter(questionario_id=questionario.id, tema=tema_transporte.id, tipo_resposta='multipla_escolha')
     if not perguntas.exists():
         return redirect('utilizadores:mensagem1', 19)
-
+    print(perguntas)
     resultados = []
     for pergunta in perguntas:
         # Filtrar respostas individuais e opções relacionadas à pergunta
@@ -1180,6 +1180,10 @@ def presençaInscricao(request,inscricao_id):
         return user_check_var.get('render')
     if inscricao_id is not None:
         inscricao = Inscricao.objects.get(id=inscricao_id)
+
+    inscricaosessoes = Inscricaosessao.objects.filter(inscricao=inscricao_id)
+    if not inscricaosessoes:
+        return redirect('utilizadores:mensagem8', 20)
 
     return render(request=request,
                   template_name='inscricoes/consultarPresença.html',context={
