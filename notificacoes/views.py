@@ -316,6 +316,24 @@ def enviar_notificacao_automatica(request, sigla, id):
         info = InformacaoNotificacao(data=timezone.now() + timedelta(days=5), pendente=True, titulo = titulo,
                               descricao = descricao, emissor = user_sender , recetor = user_recipient, tipo = "atividade "+str(id) , lido = False)
         info.save()
+   
+    elif sigla == "criarRoteiro":
+        titulo = "Atividade associada a um Roteiro"
+        atividades = Atividade.objects.filter(roteiro_id=id)  # Recupera todas as atividades associadas ao roteiro
+        roteiro = Roteiro.objects.get(id = id)
+        for atividade in atividades:
+            user_recipient = atividade.professoruniversitarioutilizadorid
+            user_sender = Utilizador.objects.get(id=request.user.id)  # Supondo que request.user.id é o emissor
+            
+            descricao = f"A atividade '{atividade.nome}' foi associada ao '{roteiro.nome}'."
+            notify.send(sender=user_sender, recipient=user_recipient, verb=descricao, action_object=None,
+                    target=atividade, level="warning", description=titulo, public=False, timestamp=timezone.now())
+             
+            
+   
+
+
+
 
 
 ######################################################### Mensagens #####################################################

@@ -427,10 +427,8 @@ def inserirsessao(request,id):
         if request.method == "POST":
             if 'new' in request.POST:
                 diasessao=request.POST["diasessao"]
-                print(diasessao)
                 inicio= request.POST['horarioid']
                 splitinicio=inicio.split(":")
-                print(splitinicio)
                 duracaoesperada= atividadeid.duracaoesperada
                 hfim= horariofim(splitinicio,duracaoesperada)
                 horario= Horario.objects.filter(inicio= request.POST['horarioid'], fim=hfim).first()
@@ -788,15 +786,16 @@ def escolherDiaAbertoAtividade(request, id):
                                 'tipo':'error',
                                 'm':'Esta atividade pertence a um roteiro '
                             })
-    # Verificar se a atividade é do ano atual ou tem um roteiro associado
     
-    if atividade_original.diaabertoid.ano == current_year: 
-           return    render(request=request,
-                           template_name='mensagem.html',
-                          context={
-                              'tipo':'error',
-                              'm':'Não pode duplicar uma atividade durante o dia aberto atual'
-                          })
+    diaaberto = atividade_original.diaabertoid.filter(ano=current_year).first()
+    
+    if diaaberto:
+        return render(request=request,
+                      template_name='mensagem.html',
+                      context={
+                          'tipo': 'error',
+                          'm': 'Não pode duplicar uma atividade durante o dia aberto atual.'
+                      })
     
 
     # Se a atividade não é do ano atual e não tem roteiro associado, listar dias abertos para escolha
@@ -827,9 +826,10 @@ def duplicarAtividade(request, id, novo_diaaberto_id):
         espacoid=atividade_original.espacoid,
         tema=atividade_original.tema,
         professoruniversitarioutilizadorid=atividade_original.professoruniversitarioutilizadorid,
-        diaabertoid=novo_diaaberto,  
     )
+
     nova_atividade.save()
+    nova_atividade.diaabertoid.add(novo_diaaberto)
 
     sessao_original = Sessao.objects.filter(atividadeid=atividade_original)
     for sessao in sessao_original:
