@@ -836,6 +836,48 @@ def mensagem7(request, id, *args, **kwargs):
     return render(request=request,
         template_name="mensagem7.html", context={'m': m, 'tipo': tipo ,'u': u, 'continuar': continuar,})
 
+
+@handle_db_errors
+def mensagem8(request, id, *args, **kwargs):
+    ''' Template de mensagens informativas/erro/sucesso '''
+
+    if request.user.is_authenticated:    
+        user = get_user(request)
+        if user.groups.filter(name = "Coordenador").exists():
+            u = "Coordenador"
+        elif user.groups.filter(name = "Administrador").exists():
+            u = "Administrador"
+        elif user.groups.filter(name = "ProfessorUniversitario").exists():
+            u = "ProfessorUniversitario"
+        elif user.groups.filter(name = "Colaborador").exists():
+            u = "Colaborador"
+        elif user.groups.filter(name = "Participante").exists():
+            u = "Participante" 
+        else:
+            u=""     
+    else:
+        u = ""
+
+
+    if id == 400 or id == 500:
+        user = get_user(request)
+        m = "Erro no servidor"
+        tipo = "error"
+
+    elif id == 20:
+        m = "Inscrição não presente em nenhuma atividade"
+        tipo = "error"
+    
+    else:
+        m = "Esta pagina não existe"
+        tipo = "error"  
+
+    continuar = "on" 
+    if id == 400 or id == 500:
+        continuar = "off" 
+    return render(request=request,
+        template_name="mensagem8.html", context={'m': m, 'tipo': tipo ,'u': u, 'continuar': continuar,})
+
 @handle_db_errors
 def enviar_email_validar(request,nome,id):
     ''' Envio de email quando o utilizador é validado na pagina consultar utilizadores '''  
