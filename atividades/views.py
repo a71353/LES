@@ -427,10 +427,8 @@ def inserirsessao(request,id):
         if request.method == "POST":
             if 'new' in request.POST:
                 diasessao=request.POST["diasessao"]
-                print(diasessao)
                 inicio= request.POST['horarioid']
                 splitinicio=inicio.split(":")
-                print(splitinicio)
                 duracaoesperada= atividadeid.duracaoesperada
                 hfim= horariofim(splitinicio,duracaoesperada)
                 horario= Horario.objects.filter(inicio= request.POST['horarioid'], fim=hfim).first()
@@ -810,19 +808,49 @@ def escolherDiaAbertoAtividade(request, id):
 
 
 @handle_db_errors
-def duplicarAtividade(request, id, novo_diaaberto_id):
+def duplicarAtividade(request, id):
+    ano_atual = datetime.now().year
+    atividade_original = get_object_or_404(Atividade, id=id)
+
+    # Verificação do estado da atividade
+    if atividade_original.estado != 'Aceite':
+        return render(request, 'mensagem.html', {
+            'tipo': 'error',
+            'm': 'Não pode duplicar uma atividade que não está aceite.'
+        })
+
+    # Verificação da associação com roteiros
+    if atividade_original.roteiro:
+        return render(request, 'mensagem.html', {
+            'tipo': 'error',
+            'm': 'Esta atividade pertence a um roteiro.'
+        })
+
+    # Verificação da pertinência ao dia aberto atual
+    diaaberto_atual = Diaaberto.objects.filter(ano=ano_atual).first()
+    if atividade_original.diaabertoid.filter(id=diaaberto_atual.id).exists():
+        return render(request, 'mensagem.html', {
+            'tipo': 'error',
+            'm': 'Não pode duplicar uma atividade durante o dia aberto atual.'
+        })
     
-    atividade_original = Atividade.objects.filter(id=id).first()
-    novo_diaaberto = Diaaberto.objects.filter(id=novo_diaaberto_id).first() 
-   
+    print("Dia aberto" , diaaberto_atual)
+    print("Atividade dia aberto", atividade_original.diaabertoid)
+    if atividade_original.diaabertoid == diaaberto_atual:
+        return render(request, 'mensagem.html', {
+            'tipo': 'error',
+            'm': 'Não pode duplicar o roteiro no Dia Aberto atual que está a decorrer.'
+        })
     
+
+    # Continuação com a duplicação se todas as verificações passarem
     nova_atividade = Atividade(
-        nome=f"{atividade_original.nome} (Cópia {novo_diaaberto.ano})",
+        nome=f"{atividade_original.nome} (Cópia {ano_atual})",
         descricao=atividade_original.descricao,
         publicoalvo=atividade_original.publicoalvo,
         nrcolaboradoresnecessario=atividade_original.nrcolaboradoresnecessario,
         tipo=atividade_original.tipo,
-        estado='pendente', 
+        estado='pendente',
         duracaoesperada=atividade_original.duracaoesperada,
         participantesmaximo=atividade_original.participantesmaximo,
         espacoid=atividade_original.espacoid,
@@ -831,24 +859,19 @@ def duplicarAtividade(request, id, novo_diaaberto_id):
     )
 
     nova_atividade.save()
-    nova_atividade.diaabertoid.add(novo_diaaberto)
+    nova_atividade.diaabertoid.add(diaaberto_atual)
 
-    sessao_original = Sessao.objects.filter(atividadeid=atividade_original)
-    for sessao in sessao_original:
-        sessao.pk = None
+    sessoes_original = Sessao.objects.filter(atividadeid=atividade_original)
+    for sessao in sessoes_original:
+        sessao.pk = None  # Isso limpa o ID existente para criar um novo objeto
         sessao.atividadeid = nova_atividade
-        nova_data = adjust_session_date_atividade(sessao.dia, novo_diaaberto)
+        nova_data = adjust_session_date_atividade(sessao.dia, diaaberto_atual)
         sessao.dia = nova_data
         sessao.save()
 
-    material_original = Materiais.objects.filter(atividadeid=atividade_original)
-    for material in material_original:
-        material.pk =None
-        material.atividadeid = nova_atividade
-        material.save()
-
-    #message.success(request, "Atividade duplicada com sucesso.")
+    # Redirecionar com mensagem de sucesso
     return redirect('atividades:minhasAtividades')
+
 
 
 def adjust_session_date_atividade(original_date, novo_diaaberto):

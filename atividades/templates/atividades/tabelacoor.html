@@ -40,8 +40,9 @@
             </tbody>
         </table>
 
-                <h3>Atividades Associadas:</h3>
+              
         <table class="table has-mobile-cards is-fullwidth">
+            <p><strong>Atividades associadas:</strong></p>
             <thead>
                 <tr>
                     <th>Nome da Atividade</th>
@@ -50,7 +51,7 @@
             <tbody>
                 {% for atividade in row.record.roteiro.atividade_set.all %}
                 <tr>
-                    <td>{{ atividade.nome }}</td>
+                    <td style="font-size: 17px; background-color: white;">{{ atividade.nome }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

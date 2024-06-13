@@ -21,7 +21,7 @@ urlpatterns = [
     path('atividadesadmin',views.AtividadesAdmin.as_view(),name="atividadesAdmin"),
     path('verdeps',views.verdeps,name="verDepartamentos"),
     path('veruos',views.verfaculdades,name="verFaculdades"),
-    path('duplicarAtividade/<int:id>/<int:novo_diaaberto_id>/', views.duplicarAtividade, name="duplicarAtividade"),
+    path('duplicarAtividade/<int:id>', views.duplicarAtividade, name="duplicarAtividade"),
     path('escolherDiaAbertoAtividade/<int:id>' , views.escolherDiaAbertoAtividade, name="escolherDiaAbertoAtividade"),
 ]
 

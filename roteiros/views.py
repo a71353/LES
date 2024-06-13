@@ -113,7 +113,6 @@ def proporRoteiro(request):
                     'url': reverse('roteiros:proporRoteiro')  # Ajuste 'home' para a URL de redirecionamento desejada
                 })
             else:
-                print("aaaaaaaaaaaaaaaaaaaaaaa")
                 atividades_selecionadas = Atividade.objects.filter(id__in=atividades_ids)
                 maior_duracao = atividades_selecionadas.aggregate(maior_duracao=Max('duracaoesperada'))['maior_duracao']
                 countAtividades = atividades_selecionadas.count()
@@ -269,9 +268,9 @@ def confirmarResumo(request,id):
 
     if roteiro.exists():  
         roteiro = Roteiro.objects.get(id=id)
-        #views.enviar_notificacao_automatica(request,"roteiroCriado",roteiro.id)
+        views.enviar_notificacao_automatica(request,"criarRoteiro",roteiro.id)
         Atividade.objects.filter(roteiro=roteiro).update(estado='Aceite')
-        return redirect("roteiros:criarRoteiro")
+        return redirect("atividades:atividadesUOrganica")
     else:
         return    render(request=request,
                             template_name='mensagem.html',
@@ -369,7 +368,7 @@ def escolherDiaAberto(request, id):
     if not roteiro_original:
         return render(request, 'mensagem.html', {
             'tipo': 'error',
-            'm': 'Não pode duplicar o roteiro que nao tem atividades selecionadas'
+            'm': 'Não pode duplicar o roteiro que não tem atividades selecionadas'
         })
      # Determina o dia aberto atual comparando as datas com a data e hora atuais
     hoje = datetime.now()
@@ -379,7 +378,7 @@ def escolherDiaAberto(request, id):
     if roteiro_original.diaabertoid == dia_aberto_atual:
         return render(request, 'mensagem.html', {
             'tipo': 'error',
-            'm': 'Não pode duplicar o roteiro no Dia Aberto atual que está decorrendo.'
+            'm': 'Não pode duplicar o roteiro no Dia Aberto atual que está a decorrer.'
         })
 
     dias_abertos = Diaaberto.objects.all()  
@@ -402,7 +401,7 @@ def duplicarRoteiro(request, id, novo_diaaberto_id):
         # If a duplicate Roteiro exists, inform the user and redirect or render a response
        return render(request, 'mensagem.html', {
             'tipo': 'error',
-            'm': 'Este roteiro ja existe neste dia aberto'
+            'm': 'Este roteiro já existe neste dia aberto'
         })
 
 
@@ -440,7 +439,7 @@ def duplicarRoteiro(request, id, novo_diaaberto_id):
     else:
         return render(request, 'mensagem.html', {
             'tipo': 'error',
-            'm': 'Roteiro não encontrado ou você não tem permissão para duplicar este roteiro.'
+            'm': 'Roteiro não encontrado ou não tem permissão para duplicar este roteiro.'
         })
 
 def adjust_session_date(original_date, novo_diaaberto):
@@ -713,7 +712,7 @@ def eliminarRoteiro2(request, id):
                       context={'tipo': 'error', 'm': 'Roteiro não encontrado!'})
 
     diaabertopropostas = Diaaberto.objects.filter(datapropostasatividadesincio__lte=now(),dataporpostaatividadesfim__gte=now()).first()   
-    if diaabertopropostas:
+    if not diaabertopropostas:
        return render(request=request,
                       template_name='mensagem.html',
                       context={'tipo': 'error', 'm': 'O periodo de propor e eliminar roteiros ja terminou !'})
