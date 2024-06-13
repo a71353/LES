@@ -141,7 +141,7 @@ class ProfAtividadesTable(tables.Table):
                         </span>
                     </a>
                     &nbsp;
-                    <a id='duplicar' href="{reverse('atividades:escolherDiaAbertoAtividade', kwargs={'id':record.pk})}" title="Duplicar Atividade">
+                    <a id='duplicar' href="{reverse('atividades:duplicarAtividade', kwargs={'id':record.pk})}" title="Duplicar Atividade">
                         <span class="icon is-small">
                             <i class="gg-duplicate"></i>
                         </span>
