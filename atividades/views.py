@@ -427,10 +427,8 @@ def inserirsessao(request,id):
         if request.method == "POST":
             if 'new' in request.POST:
                 diasessao=request.POST["diasessao"]
-                print(diasessao)
                 inicio= request.POST['horarioid']
                 splitinicio=inicio.split(":")
-                print(splitinicio)
                 duracaoesperada= atividadeid.duracaoesperada
                 hfim= horariofim(splitinicio,duracaoesperada)
                 horario= Horario.objects.filter(inicio= request.POST['horarioid'], fim=hfim).first()
