@@ -38,6 +38,8 @@ from django.contrib.auth import get_user
 from django.shortcuts import render
 from configuracao.models import Diaaberto,Menu, Prato
 from questionariosPublicados.models import *
+from roteiros.filters import CoordRoteiroFilter
+from roteiros.serializers import RoteiroSerializer
 # Create your views here.
 import json
 
@@ -96,6 +98,23 @@ class AtividadesAPI(ListAPIView):
     serializer_class = AtividadeSerializer
     pagination_class = AtividadesPagination
     filterset_class = AtividadeFilter
+
+
+class RoteirosAPI(ListAPIView):
+    """ View que gera uma API readonly com as informações dos Roteiros
+        que pode ser usada para consultas e inscrições em roteiros """
+    class RoteirosPagination(PageNumberPagination):
+        page_size = 10
+        page_size_query_param = 'page_size'
+        max_page_size = 100
+
+    search_fields = '__all__'
+    ordering_fields = '__all__'
+    ordering = 'nome'  # Supondo que a ordenação padrão seja pelo nome
+    filter_backends = (SearchFilter, OrderingFilter, DjangoFilterBackend) 
+    serializer_class = RoteiroSerializer
+    pagination_class = RoteirosPagination
+    filterset_class = CoordRoteiroFilter
 
 
 class CriarInscricao(SessionWizardView):

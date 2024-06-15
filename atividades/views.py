@@ -850,7 +850,7 @@ def duplicarAtividade(request, id):
         publicoalvo=atividade_original.publicoalvo,
         nrcolaboradoresnecessario=atividade_original.nrcolaboradoresnecessario,
         tipo=atividade_original.tipo,
-        estado='pendente',
+        estado='Pendente',
         duracaoesperada=atividade_original.duracaoesperada,
         participantesmaximo=atividade_original.participantesmaximo,
         espacoid=atividade_original.espacoid,
