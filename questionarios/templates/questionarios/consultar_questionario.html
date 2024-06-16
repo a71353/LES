@@ -246,10 +246,11 @@
     {% endfor %}
     </tbody>
 </table>
+{% if mostrar_paginacao %}
 <nav aria-label="Navegação de página" class="d-flex justify-content-between">
     <div>
         <a class="button is-large is-outlined" href="{% url 'questionarios:lista_questionarios' %}">
-            <span>Voltar</span>
+            <span style="color: #3273DC">Cancelar</span>
         </a>
     </div>
     <ul class="pagination">
@@ -292,6 +293,14 @@
         {% endif %}
     </ul>
 </nav>
+{% else %}
+<div>
+    <a class="button is-large is-outlined" href="{% url 'questionarios:lista_questionarios' %}">
+        <span style="color: #3273DC">Cancelar</span>
+    </a>
+</div>
+{% endif %}
+
 
 
 
