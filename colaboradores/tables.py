@@ -68,7 +68,6 @@ class ColaboradorAtividadesTable(django_tables.Table):
         self.columns.hide('duracaoesperada')
         self.columns.hide('participantesmaximo')
         self.columns.hide('espacoid')
-        self.columns.hide('diaabertoid')
         self.columns.hide('estado')
         self.columns.hide('datasubmissao')
 
@@ -137,7 +136,6 @@ class ColaboradorAtividadesSelecionadasTable(django_tables.Table):
         self.columns.hide('duracaoesperada')
         self.columns.hide('participantesmaximo')
         self.columns.hide('espacoid')
-        self.columns.hide('diaabertoid')
         self.columns.hide('estado')
         self.columns.hide('datasubmissao')
 
