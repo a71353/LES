@@ -34,12 +34,13 @@ def handle_db_errors(view_func):
     def wrapper(request, *args, **kwargs):
         try:
             response = view_func(request, *args, **kwargs)
+            if response is None:
+                return render(request, "db_error.html", status=503)
             return response
         except OperationalError as e:
             print(f"Database error encountered: {e}")
             return render(request, "db_error.html", status=503)
     return wrapper
-
 
 class TimeC():
 	time: str = None
