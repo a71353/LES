@@ -122,6 +122,10 @@ python manage.py makemigrations inscricoes
 python manage.py makemigrations notifications
 python manage.py makemigrations auth
 python manage.py makemigrations utilizadores
+python manage.py makemigrations questionarios
+python manage.py makemigrations questionariosPublicados
+python manage.py makemigrations relatorios
+python manage.py makemigrations roteiros
 ```
 
 12. Gerar as tabelas da DB
