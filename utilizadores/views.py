@@ -1350,6 +1350,9 @@ def mensagem(request, id, *args, **kwargs):
     elif id == 8004:
         m = "O Questionario ja excedeu o limite de respostas para este código!"
         tipo = "info"
+    elif id == 11000:
+        m = "O questionario não pode ser respondido pois não está publicado"
+        tipo = "error"
     #Relatórios#######################################
     elif id == 8005:
         m = "Não existe Dia Aberto para o ano fornecido."

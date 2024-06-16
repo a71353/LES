@@ -280,6 +280,14 @@ def verificarResponderQuestionario(request):
                 return redirect('utilizadores:mensagem', 8003)
             else:  # Dia aberto tem questionário
                 questID = questionarioId.id
+                try:
+                    questionario = Questionario.objects.get(id=questID)
+                    print(questionario.estado_id)
+                except Questionario.DoesNotExist:
+                    return redirect('utilizadores:mensagem', 8003)  # Questionário não encontrado
+
+                if questionario.estado_id != "pub":
+                    return redirect('utilizadores:mensagem', 11000)
                 inscricoes = Inscricao.objects.filter(diaaberto=diaabertoAtual[0].id).all()
 
                 # Obter o código de inscrição da sessão
