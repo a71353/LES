@@ -15,7 +15,7 @@ cd ~/Documentos/Universidade/LES
 2. Clonar o projeto do github
 
 ```SH
-git clone https://github.com/6135/dia-aberto-new.git
+git clone https://github.com/a71353/LES.git
 ```
 
 3. Entrar na pasta do projeto
