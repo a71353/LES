@@ -15,7 +15,7 @@ cd ~/Documentos/Universidade/LES
 2. Clonar o projeto do github
 
 ```SH
-git clone https://github.com/6135/dia-aberto-new.git
+git clone https://github.com/a71353/LES.git
 ```
 
 3. Entrar na pasta do projeto
@@ -122,6 +122,10 @@ python manage.py makemigrations inscricoes
 python manage.py makemigrations notifications
 python manage.py makemigrations auth
 python manage.py makemigrations utilizadores
+python manage.py makemigrations questionarios
+python manage.py makemigrations questionariosPublicados
+python manage.py makemigrations relatorios
+python manage.py makemigrations roteiros
 ```
 
 12. Gerar as tabelas da DB

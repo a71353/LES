@@ -55,7 +55,6 @@ def handle_db_errors(view_func):
             return render(request, "db_error.html", status=503)
     return wrapper
 
-
 # Create your views here.
 class ListaQuestionarios(SingleTableMixin, FilterView):
     model = Questionario  # Define o modelo a partir do qual buscar os dados.
