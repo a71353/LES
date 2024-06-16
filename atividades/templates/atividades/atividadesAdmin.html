@@ -3,60 +3,15 @@
 {% load django_tables2 %}
 <div class="columns">
        <div class="column is-3">
-{% csrf_token %}
  <form method="get">
             <div class="menu">
-                <p class="menu-label">Filtros Atividades</p>
+                <p class="menu-label">Filtros Atividades/Roteiros</p>
                 <ul class="menu-list">
                     <div class="field">
                         <div class="control has-icons-left">
                             <div class="select is-fullwidth">
-                                <select name="{{ filter.form.campus_id.name }}"
-                                    value="{{filter.form.campus_id.value}}" id= "id_{{ filter.form.campus_id.name }}">
-                                    <option value="">Qualquer Campus</option>
-                                    {% for value, camp in campus %}
-                                        {% if value != "" %}    
-                                        <option value="{{ value }}"
-                                            {% if value|stringformat:'s' == filter.form.campus_id.value %} selected
-                                            {% endif %}>
-                                            {{ camp }}
-                                        </option>
-                                    {% endif %}
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <span class="icon is-left">
-                                <i class="mdi mdi-magnify mdi-24px"></i>
-                            </span>
-                        </div>
-                    </div>
-                    <div class="field">
-                        <div class="control has-icons-left">
-                            <div class="select is-fullwidth">
-                                <select name="{{ filter.form.uo_id.name }}"
-                                    value="{{filter.form.uo_id.value}}" id= "id_{{ filter.form.uo_id.name }}">
-                                    <option value="">Qualquer Faculdade</option>
-                                    {% for value, uo in uos %}
-                                        {% if value != "" %}    
-                                        <option value="{{ value }}"
-                                            {% if value|stringformat:'s' == filter.form.uo_id.value %} selected
-                                            {% endif %}>
-                                            {{ uo }}
-                                        </option>
-                                    {% endif %}
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <span class="icon is-left">
-                                <i class="mdi mdi-magnify mdi-24px"></i>
-                            </span>
-                        </div>
-                    </div>
-                    <div class="field">
-                        <div class="control has-icons-left">
-                            <div class="select is-fullwidth">
                                 <select name="{{ filter.form.departamento_id.name }}"
-                                    value="{{filter.form.departamento_id.value}}" id="id_{{ filter.form.departamento_id.name }}">
+                                    value="{{filter.form.departamento_id.value}}">
                                     <option value="">Qualquer Departamento</option>
                                     {% for value, dep in deps %}
                                         {% if value != "" %}    
@@ -110,9 +65,29 @@
                         {{filter.form.estado}}
                     </li>
                 </ul>
+
+                <div class="field">
+                    <div class="control has-icons-left">
+                        <div class="select is-fullwidth">
+                            <!-- Mudança aqui: Usar o nome correto do campo do formulário, que é 'roteiro' -->
+                            <select name="{{ filter.form.roteiro.name }}">
+                                <option value="">Qualquer Roteiro</option>
+                                {% for roteiro in roteiros %}
+                                <!-- Ajuste para verificar se o valor atualmente selecionado corresponde ao valor no loop -->
+                                <option value="{{ roteiro.id }}" {% if filter.form.roteiro.value|stringformat:'s' == roteiro.id|stringformat:'s' %} selected {% endif %}>
+                                    {{ roteiro.nome }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <span class="icon is-left">
+                            <i class="mdi mdi-magnify mdi-24px"></i>
+                        </span>
+                    </div>
+                </div>
                 <div class='field is-grouped' style='margin-top: 5px'>
                         <p class="control is-expanded">
-                            <a type="button" role="button" href="{% url 'atividades:atividadesAdmin' %}" class="button is-light is-fullwidth">Limpar</a>
+                            <a type="button" role="button" href="{% url 'atividades:atividadesUOrganica' %}" class="button is-light is-fullwidth">Limpar</a>
                         </p>
                         <p class="control is-expanded">
                             <button class="button is-primary is-fullwidth" type="submit">
@@ -123,9 +98,12 @@
                             </button>
                         </p>
                 </div>
+                
+
             </div>     
         </form>
     </div>
+    
     <div class="column">
         <nav class="breadcrumb" aria-label="breadcrumbs">
             <ul>
@@ -133,8 +111,24 @@
               <li class="is-active"><a href="#" aria-current="page">Atividades</a></li>
             </ul>
           </nav>
-        {% render_table table 'atividades/tabelaadmin.html' %}
+          <a href="{% url 'roteiros:proporRoteiro' %}" class="button is-success is-outlined" type="button" style="margin-bottom:0.5rem">
+            <span class="icon is-small">
+                <i class="mdi mdi-plus"></i>
+            </span>
+            <span>Criar novo Roteiro</span>
+        </a>
+        <a href="{% url 'roteiros:verTodosRelatorios' %}" class="button is-primary " type="button" style="margin-bottom:0.5rem">
+            <span class="icon is-small">
+                <i class="fa-solid fa-file-pdf" style="color: #c93217; font-size: 20px;"></i>
+            </span>
+            <span>Exportar Atividades/Roteiros</span>
+        </a>
+        {% render_table table 'atividades/tabelacoor.html' %}
     </div>
+    
+   
+
+
 
 <style>
 .dialog .modal-card .modal-card-body.is-titleless {
@@ -152,7 +146,22 @@ tr.detail{
 }
 
 
-.gg-duplicate {
+
+    
+    .dialog .modal-card .modal-card-body.is-titleless {
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+    }
+    
+    tr.detail{
+        padding:1rem;
+    }
+    .table tr.detail{
+        -webkit-box-shadow:inset 0 1px 3px #dbdbdb;
+        box-shadow:inset 0 1px 3px #dbdbdb;
+        background:#fafafa
+    }
+    .gg-duplicate {
      box-sizing: border-box;
      position: relative;
      display: block;
@@ -191,94 +200,9 @@ tr.detail{
      top: -8px
     } 
 </style>
+    <script>
+        <link href='https://unpkg.com/css.gg@2.0.0/icons/css/duplicate.css' rel='stylesheet'></link>
+    </script>
 {% endblock content %}
 {% block scripts%}
-<script>
-
- $(document).ready(function(){
-            var value_uo= "{{ filter.form.uo_id.value }}";
-            var value_dep= "{{filter.form.departamento_id.value}}";
-            var value_campus= "{{filter.form.campus_id.value}}";
-            console.log(value_campus)
-            $.ajax({
-                url:"{% url 'atividades:verFaculdades' %}",
-                method: 'POST',
-                data: {
-                    'value_campus': value_campus,
-                    'value_uo': value_uo,
-                    csrfmiddlewaretoken:$('input[name=csrfmiddlewaretoken]').val(), 
-                },
-                success: function(data){
-                    $("#id_{{ filter.form.uo_id.name }}").html(data)
-                }
-    
-            })
-            console.log(value_dep)
-            $.ajax({
-            url:"{% url 'atividades:verDepartamentos' %}",
-            method: 'POST',
-            data: {
-                'value_uo': value_uo,
-                'value_dep': value_dep,
-                csrfmiddlewaretoken:$('input[name=csrfmiddlewaretoken]').val(), 
-            },
-            success: function(data){
-                $("#id_{{ filter.form.departamento_id.name }}").html(data)
-                }
-            })
-    });
-
-     $("#id_{{ filter.form.campus_id.name }}").change(function()
-    {
-        var value_campus= $(this).val();
-        console.log(value_campus)
-        $.ajax({
-            url:"{% url 'atividades:verFaculdades' %}",
-            method: 'POST',
-            data: {
-                'value_campus': value_campus,
-                csrfmiddlewaretoken:$('input[name=csrfmiddlewaretoken]').val(), 
-            },
-            success: function(data){
-                $("#id_{{ filter.form.uo_id.name }}").html(data)
-                $("#id_{{ filter.form.departamento_id.name }}").html('<option value="">---------</option>')
-            }
-
-        })
-        var value_uo= $(this).val();
-        $.ajax({
-            url:"{% url 'atividades:verDepartamentos' %}",
-            method: 'POST',
-            data: {
-                'value_uo': value_uo,
-                csrfmiddlewaretoken:$('input[name=csrfmiddlewaretoken]').val(), 
-            },
-            success: function(data){
-                $("#id_{{ filter.form.departamento_id.name }}").html(data)
-
-            }
-
-        })
-
-    })
-
-    $("#id_{{ filter.form.uo_id.name }}").change(function()
-    {
-        var value_uo= $(this).val();
-        $.ajax({
-            url:"{% url 'atividades:verDepartamentos' %}",
-            method: 'POST',
-            data: {
-                'value_uo': value_uo,
-                csrfmiddlewaretoken:$('input[name=csrfmiddlewaretoken]').val(), 
-            },
-            success: function(data){
-                $("#id_{{ filter.form.departamento_id.name }}").html(data)
-
-            }
-
-        })
-
-    })
-</script>
 {% endblock scripts%}

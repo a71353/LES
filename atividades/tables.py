@@ -159,9 +159,10 @@ class AdminAtividadesTable(tables.Table):
     
     professoruniversitarioutilizadorid = tables.Column('Professor')
     datasubmissao = tables.Column('Data de Submissão')
+    roteiro = tables.Column('Roteiro',accessor='getRoteiroNome',orderable=False)
     class Meta:
         model = Atividade
-        sequence = ('nome','professoruniversitarioutilizadorid','tipo','datasubmissao','estado')
+        sequence = ('nome','professoruniversitarioutilizadorid','tipo','datasubmissao','estado', 'roteiro')
     def before_render(self, request):
         self.columns.hide('id')
         self.columns.hide('descricao')
