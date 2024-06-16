@@ -121,6 +121,7 @@ class AtividadesAdmin(SingleTableMixin, FilterView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         table = self.get_table(**self.get_table_kwargs())
+        user_id = self.request.user.id
 
         #Everything below goes to details
         table.conflitos = conflict_array()
@@ -128,6 +129,7 @@ class AtividadesAdmin(SingleTableMixin, FilterView):
         context["deps"] = list(map(lambda x: (x.id, x.nome), Departamento.objects.all()))
         context["uos"] = list(map(lambda x: (x.id, x.nome), Unidadeorganica.objects.all()))
         context["campus"] = list(map(lambda x: (x.id, x.nome), Campus.objects.all()))
+        context['roteiros'] = Roteiro.objects.filter(coordenadorID__utilizador_ptr_id=user_id)
         #----------
     
         context[self.get_context_table_name(table)] = table
