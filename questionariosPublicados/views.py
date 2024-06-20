@@ -263,7 +263,6 @@ def responderQuestionario(request, id):
             'opcoes_dict': opcoes
         })
 
-
 @handle_db_errors
 #novo(analisa o codigo)  
 def verificarResponderQuestionario(request): 
@@ -272,6 +271,9 @@ def verificarResponderQuestionario(request):
     user = get_user(request)
 
     if user.groups.filter(name="Participante").exists():
+        ##################
+        validar_publicados(request)
+        ##################
         if diaabertoAtual.count() == 0:  # Se não existir Dia Aberto para o ano atual
             return redirect('utilizadores:mensagem', 8002)
         else:
@@ -348,6 +350,17 @@ def verificar_codigo(request, codigo):
         return JsonResponse({'success': True, 'id': inscricao.id, 'message': 'Código verificado com sucesso!'})
     else:
         return JsonResponse({'success': False, 'message': 'Código inválido!'}, status=404)
+    
+from django.utils.timezone import now
+@handle_db_errors
+def validar_publicados(request):
+    if request.user.groups.filter(name="Participante").exists():
+        questionarios = Questionario.objects.filter(estado__id='pub', data_fim_publicacao__lt=now().date())
+        estado_indisponivel = EstadoQuestionario.objects.get(id='dis')
+        for questionario in questionarios:
+            questionario.estado = estado_indisponivel
+            questionario.save()
+
 
 
 """from django.shortcuts import redirect, get_object_or_404, render
